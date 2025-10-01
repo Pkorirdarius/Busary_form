@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>West Pokot County Bursary Application Form 2024/2025 FY</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="form-wrapper" role="main">
+    <div class="form-header">
+      <h1>West Pokot County Bursary Application Form 2024/2025 FY</h1>
+      <p>Academic Year 2024 / 2025 — Fill in the details in legible capital letters and attach required documents. NB: Submission of incomplete form may lead to disqualification. All duly filled forms should be delivered on or before 29th November, 2024, at the ward Office for onward processing.</p>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-steps">
+        <div class="step" id="ps-1">1. Personal</div>
+        <div class="step" id="ps-2">2. Institution</div>
+        <div class="step" id="ps-3">3. Family</div>
+        <div class="step" id="ps-4">4. Documents</div>
+        <div class="step" id="ps-5">5. Declaration</div>
+      </div>
+    </div>
+
+    <form id="bursaryForm" class="form-container" novalidate>
+      <div class="form-section active" data-step="1" id="section-1">
+        <div class="section-header">
+          <div class="section-number active">1</div>
+          <div class="section-title"><h2>Personal Details</h2><p>Applicant biodata</p></div>
+        </div>
+        <div class="section-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Full Name (as on ID)</label>
+              <input type="text" id="fullName" name="fullName" required />
+            </div>
+            <div class="form-group">
+              <label class="required">ID / Admission Number</label>
+              <input type="text" id="idNumber" name="idNumber" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Date of Birth</label>
+              <input type="date" id="dob" name="dob" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Gender</label>
+              <select id="gender" name="gender" required>
+                <option value="">Select</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">County</label>
+              <input type="text" id="county" name="county" value="West Pokot" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Sub-County</label>
+              <input type="text" id="subCounty" name="subCounty" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Ward</label>
+              <input type="text" id="ward" name="ward" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Location</label>
+              <input type="text" id="location" name="location" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Sub-Location</label>
+              <input type="text" id="subLocation" name="subLocation" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Village</label>
+              <input type="text" id="village" name="village" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Name of the Chief</label>
+              <input type="text" id="chiefName" name="chiefName" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Phone Number</label>
+              <input type="tel" id="phone" name="phone" placeholder="+2547XXXXXXXX" required />
+            </div>
+            <div class="form-group">
+              <label class="">Email (optional)</label>
+              <input type="email" id="email" name="email" />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Are you an orphan?</label>
+              <div class="radio-group" role="radiogroup" aria-label="orphan">
+                <label class="radio-item"><input type="radio" name="orphan" value="Yes"> Yes</label>
+                <label class="radio-item"><input type="radio" name="orphan" value="No" checked> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group conditional" id="orphanNote">
+              <label>Orphan status selected — you will be required to provide guardianship documents in attachments.</label>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Are you a person with disability?</label>
+              <div class="radio-group" role="radiogroup" aria-label="disability">
+                <label class="radio-item"><input type="radio" name="disability" value="Yes"> Yes</label>
+                <label class="radio-item"><input type="radio" name="disability" value="No" checked> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row conditional" id="disabilityDetails">
+            <div class="form-group">
+              <label>Nature of Disability</label>
+              <input type="text" id="disabilityNature" name="disabilityNature" />
+            </div>
+            <div class="form-group">
+              <label>Registration Number (National Council of People with Disability)</label>
+              <input type="text" id="disabilityRegNo" name="disabilityRegNo" />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Have you benefited from any bursaries/scholarships before?</label>
+              <div class="radio-group" role="radiogroup" aria-label="previousBursary">
+                <label class="radio-item"><input type="radio" name="previousBursary" value="Yes"> Yes</label>
+                <label class="radio-item"><input type="radio" name="previousBursary" value="No" checked> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row conditional" id="previousBursaryDetails">
+            <div class="form-group">
+              <label>(a) CDF Amount</label>
+              <input type="text" id="cdfAmount" name="cdfAmount" />
+            </div>
+            <div class="form-group">
+              <label>(b) Ministry Amount</label>
+              <input type="text" id="ministryAmount" name="ministryAmount" />
+            </div>
+          </div>
+          <div class="form-row conditional" id="previousBursaryDetailsContinued">
+            <div class="form-group">
+              <label>(c) County Government Amount</label>
+              <input type="text" id="countyGovAmount" name="countyGovAmount" />
+            </div>
+            <div class="form-group">
+              <label>(d) Any Other (specify)</label>
+              <input type="text" id="otherBursary" name="otherBursary" />
+            </div>
+          </div>
+
+          <div class="navigation">
+            <div></div>
+            <div>
+              <button type="button" class="btn btn-primary" id="toStep2">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STEP 2: INSTITUTION ===== -->
+      <div class="form-section" data-step="2" id="section-2">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <div class="section-title"><h2>Institution Details</h2><p>School/college info</p></div>
+        </div>
+        <div class="section-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Institution Name</label>
+              <input type="text" id="institution" name="institution" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Level</label>
+              <select id="level" name="level" required>
+                <option value="">Select</option>
+                <option>Primary</option>
+                <option>Secondary</option>
+                <option>College</option>
+                <option>University</option>
+                <option>TVET</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Course / Class</label>
+              <input type="text" id="course" name="course" required />
+            </div>
+            <div class="form-group">
+              <label class="required">Current Year / Form</label>
+              <input type="text" id="yearForm" name="yearForm" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">County where Institution is Located</label>
+              <input type="text" id="instCounty" name="instCounty" required />
+            </div>
+            <div class="form-group">
+              <label class="required">School/Institution Contact</label>
+              <input type="text" id="instContact" name="instContact" placeholder="School phone or email" required />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>School Performance (for continuing students)</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Term I Performance</label>
+              <input type="text" id="term1" name="term1" />
+            </div>
+            <div class="form-group">
+              <label>Term II Performance</label>
+              <input type="text" id="term2" name="term2" />
+            </div>
+            <div class="form-group">
+              <label>Term III Performance</label>
+              <input type="text" id="term3" name="term3" />
+            </div>
+          </div>
+
+          <div class="navigation">
+            <button type="button" class="btn btn-secondary" id="backTo1">Back</button>
+            <button type="button" class="btn btn-primary" id="toStep3">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STEP 3: FAMILY ===== -->
+      <div class="form-section" data-step="3" id="section-3">
+        <div class="section-header">
+          <div class="section-number">3</div>
+          <div class="section-title"><h2>Family Details</h2><p>Parent or guardian information</p></div>
+        </div>
+        <div class="section-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name of Father</label>
+              <input type="text" id="fatherName" name="fatherName" />
+            </div>
+            <div class="form-group">
+              <label>Name of Mother</label>
+              <input type="text" id="motherName" name="motherName" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Name of Guardian (if applicable)</label>
+              <input type="text" id="guardianName" name="guardianName" />
+            </div>
+            <div class="form-group">
+              <label class="required">Relation</label>
+              <input type="text" id="relation" name="relation" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Occupation of Father</label>
+              <input type="text" id="fatherOccupation" name="fatherOccupation" />
+            </div>
+            <div class="form-group">
+              <label>Occupation of Mother</label>
+              <input type="text" id="motherOccupation" name="motherOccupation" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Parent / Guardian Phone</label>
+              <input type="tel" id="parentPhone" name="parentPhone" required />
+            </div>
+            <div class="form-group">
+              <label>Parent / Guardian ID Number (if available)</label>
+              <input type="text" id="parentId" name="parentId" />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Both Parents Alive?</label>
+              <div class="radio-group" role="radiogroup" aria-label="bothParentsAlive">
+                <label class="radio-item"><input type="radio" name="bothParentsAlive" value="Yes"> Yes</label>
+                <label class="radio-item"><input type="radio" name="bothParentsAlive" value="No"> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Single Parent?</label>
+              <div class="radio-group" role="radiogroup" aria-label="singleParent">
+                <label class="radio-item"><input type="radio" name="singleParent" value="Yes"> Yes</label>
+                <label class="radio-item"><input type="radio" name="singleParent" value="No" checked> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single conditional" id="providerNote">
+            <div class="form-group">
+              <label>If Orphan, Who Provides for School Fees?</label>
+              <select id="feesProvider" name="feesProvider">
+                <option value="">Select</option>
+                <option>Self</option>
+                <option>Guardian</option>
+                <option>Sponsor</option>
+                <option>Any Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>If Any Other, Specify</label>
+              <input type="text" id="otherProvider" name="otherProvider" />
+            </div>
+          </div>
+
+          <div class="navigation">
+            <button type="button" class="btn btn-secondary" id="backTo2">Back</button>
+            <button type="button" class="btn btn-primary" id="toStep4">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STEP 4: DOCUMENTS ===== -->
+      <div class="form-section" data-step="4" id="section-4">
+        <div class="section-header">
+          <div class="section-number">4</div>
+          <div class="section-title"><h2>Attachments / Documents</h2><p>Upload required documents</p></div>
+        </div>
+        <div class="section-content">
+          <p>Key Attachments: Students' transcript/Report Form, Photocopy of Parents'/Guardians National Identity Card, Photocopy of students' National Identity Card (mandatory for post school students), Photocopy of Birth certificate, Photocopy of secondary/college/university ID card, Parents death certificate/burial permit/letter (mandatory for orphans), Current fees structure (mandatory for all applicants), Admission Letters (mandatory for colleges and universities), Student Passport Photo.</p>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">ID / Birth Certificate / Admission Letter (PDF or image)</label>
+              <div class="file-upload" id="fileIdUpload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="idFile" accept=".pdf,image/*" required />
+                </label>
+                <div id="idFilePreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">Transcript / Report Form (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="reportForm" accept=".pdf,image/*" required />
+                </label>
+                <div id="reportFormPreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Parents'/Guardians National Identity Card (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="parentIdFile" accept=".pdf,image/*" />
+                </label>
+                <div id="parentIdFilePreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Students' National Identity Card (for post school) (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="studentIdFile" accept=".pdf,image/*" />
+                </label>
+                <div id="studentIdFilePreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Secondary/College/University ID Card (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="instIdFile" accept=".pdf,image/*" />
+                </label>
+                <div id="instIdFilePreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Letter from Institution / Fee Structure (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="instLetter" accept=".pdf,image/*" />
+                </label>
+                <div id="instLetterPreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Guardianship / Death Certificate (if orphan) (PDF/image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="guardianFile" accept=".pdf,image/*" />
+                </label>
+                <div id="guardianFilePreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Student Passport Photo (image)</label>
+              <div class="file-upload">
+                <label class="file-upload-label">
+                  <span>Select file</span>
+                  <input type="file" id="passportPhoto" accept="image/*" />
+                </label>
+                <div id="passportPhotoPreview" class="file-preview"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="navigation">
+            <button type="button" class="btn btn-secondary" id="backTo3">Back</button>
+            <button type="button" class="btn btn-primary" id="toStep5">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STEP 5: DECLARATION ===== -->
+      <div class="form-section" data-step="5" id="section-5">
+        <div class="section-header">
+          <div class="section-number">5</div>
+          <div class="section-title"><h2>Declaration & Submit</h2><p>Confirm and submit</p></div>
+        </div>
+        <div class="section-content">
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Student Declaration</label>
+              <p>I, herein, declare to the best of my knowledge that the information given is true. I understand that giving false information is punishable under section 129(a) of the Penal Code of Kenya and may lead to disqualification.</p>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Applicant Signature (type full name)</label>
+              <input type="text" id="signature" name="signature" required placeholder="Type full name as signature" />
+            </div>
+            <div class="form-group">
+              <label class="required">Date</label>
+              <input type="date" id="studentDate" name="studentDate" required />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Parent/Guardian Declaration</label>
+              <p>I declare that I have read this form or it has been read to me and I hereby confirm that the information given hereunder is true to the best of my knowledge. I understand that giving false information is punishable under section 129(a) of the Penal Code of Kenya and may lead to disqualification.</p>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Parent/Guardian Signature (type full name)</label>
+              <input type="text" id="parentSignature" name="parentSignature" required placeholder="Type full name as signature" />
+            </div>
+            <div class="form-group">
+              <label class="required">Date</label>
+              <input type="date" id="parentDate" name="parentDate" required />
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Verification by Area Assistant Chief</label>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Name of Chief/Ass. Chief</label>
+                  <input type="text" id="chiefFullName" name="chiefFullName" />
+                </div>
+                <div class="form-group">
+                  <label>Sub-Location</label>
+                  <input type="text" id="chiefSubLocation" name="chiefSubLocation" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>County</label>
+                  <input type="text" id="chiefCounty" name="chiefCounty" />
+                </div>
+                <div class="form-group">
+                  <label>Sub-County</label>
+                  <input type="text" id="chiefSubCounty" name="chiefSubCounty" />
+                </div>
+                <div class="form-group">
+                  <label>Location</label>
+                  <input type="text" id="chiefLocation" name="chiefLocation" />
+                </div>
+              </div>
+              <div class="form-row single">
+                <div class="form-group">
+                  <label>Comments on the Status of the Family/Parent</label>
+                  <textarea id="chiefComments" name="chiefComments" rows="4"></textarea>
+                </div>
+              </div>
+              <p>I certify that the Information given above is correct.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Signature (type full name)</label>
+                  <input type="text" id="chiefSignature" name="chiefSignature" />
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" id="chiefDate" name="chiefDate" />
+                </div>
+                <div class="form-group">
+                  <label>Rubber Stamp (optional text)</label>
+                  <input type="text" id="rubberStamp" name="rubberStamp" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Additional Notes (optional)</label>
+              <textarea id="notes" rows="4" placeholder="Anything to add..."></textarea>
+            </div>
+          </div>
+
+          <div class="success-message" id="successMsg">Your application was submitted successfully.</div>
+          <div class="error-message" id="errorMsg">There was an error submitting your application. Try again.</div>
+
+          <div class="navigation">
+            <button type="button" class="btn btn-secondary" id="backTo4">Back</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Submit Application</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="floating-help" title="Help" id="helpBtn">?</div>
+  <script src="app.js"></script>
+</body>
+</html>
