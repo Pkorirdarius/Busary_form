@@ -51,48 +51,16 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Navigation
-  document.querySelectorAll('.navigation button').forEach(button => {
-    button.addEventListener('click', function () {
-      const currentSection = document.querySelector('.form-section.active');
-      let targetSection = null;
+  // ---------- Navigation ----------
+  document.getElementById('toStep2').addEventListener('click', () => goToStep(2));
+  document.getElementById('backTo1').addEventListener('click', () => goToStep(1));
+  document.getElementById('toStep3').addEventListener('click', () => goToStep(3));
+  document.getElementById('backTo2').addEventListener('click', () => goToStep(2));
+  document.getElementById('toStep4').addEventListener('click', () => goToStep(4));
+  document.getElementById('backTo3').addEventListener('click', () => goToStep(3));
+  document.getElementById('toStep5').addEventListener('click', () => goToStep(5));
+  document.getElementById('backTo4').addEventListener('click', () => goToStep(4));
 
-      if (this.id === 'toStep2'){
-          if(!validateStep(currentStep)){
-            showError("Please fill all required fields in this section before continuing.");
-            return;
-          }
-        targetSection = document.getElementById('section-2');
-      } else if (this.id === 'backTo1') targetSection = document.getElementById('section-1');
-      else if (this.id === 'toStep3'){ 
-          if(!validateStep(currentStep)){
-            showError("Please fill all required fields in this section before continuing.");
-            return;
-          }
-        targetSection = document.getElementById('section-3');
-      } else if (this.id === 'backTo2') targetSection = document.getElementById('section-2');
-      else if (this.id === 'toStep4'){
-          if(!validateStep(currentStep)){
-            showError("Please fill all required fields in this section before continuing.");
-            return;
-          }
-        targetSection = document.getElementById('section-4');
-      } else if (this.id === 'backTo3') targetSection = document.getElementById('section-3');
-      else if (this.id === 'toStep5'){
-          if(validateStep(currentStep)){
-            // final validation across all steps: ensure step 1-4 required fields present
-            showError("Please fill all required fields in this section before continuing.");
-            return;
-          }
-        targetSection = document.getElementById('section-5');
-      } else if (this.id === 'backTo4') targetSection = document.getElementById('section-4');
-
-      if (targetSection) {
-        currentSection.classList.remove('active');
-        targetSection.classList.add('active');
-        updateProgress();
-      }
-    });
-  });
 
   // ---------- UI state ----------
   let currentStep = 1;
@@ -102,11 +70,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateProgress() {
     const pct = Math.round((currentStep - 1) / (totalSteps - 1) * 100);
     progressFill.style.width = pct + '%';
-    for (let i=1;i<=totalSteps;i++){
-      const el = document.getElementById('ps-' + i);
-      if (!el) continue;
-      el.classList.toggle('active', i === currentStep);
-    }
+
+    steps.forEach((st, i) => {
+      st.classList.toggle('active', i + 1 === currentStep);
+    });
     sections.forEach(s => {
       const step = parseInt(s.dataset.step,10);
       s.classList.toggle('active', step === currentStep);
