@@ -1,59 +1,228 @@
 from django.db import models
-from django.conf import settings
-# Create your models here.
-
-
-def upload_to(instance, filename):
-    return f"documents/{instance.application.id}/{filename}"
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
+from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=20)
+    """Extended user profile for bursary applicants"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone_number = models.CharField(
+        max_length=15,
+        validators=[RegexValidator(r'^\+?1?\d{9,15}$', 'Enter a valid phone number')]
+    )
     id_number = models.CharField(max_length=20, unique=True)
-    county = models.CharField(max_length=50)
-    ward = models.CharField(max_length=50)
-    location = models.CharField(max_length=100)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.id_number}"
-
-
-class BursaryApplication(models.Model):
-    STATUS_CHOICES = [
-        ("Pending", "Pending"),
-        ("Approved", "Approved"),
-        ("Rejected", "Rejected"),
-    ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    institution_name = models.CharField(max_length=100)
-    tuition_fee = models.DecimalField(max_digits=10, decimal_places=2)
-    amount_requested = models.DecimalField(max_digits=10, decimal_places=2)
-    siblings_total = models.PositiveIntegerField(default=0)
-    siblings_in_school = models.PositiveIntegerField(default=0)
-    family_income = models.DecimalField(max_digits=10, decimal_places=2)
-    reason_for_application = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    date_of_birth = models.DateField()
+    county = models.CharField(max_length=100)
+    sub_county = models.CharField(max_length=100)
+    ward = models.CharField(max_length=100)
+    village = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        if self.amount_requested > self.tuition_fee:
-            raise ValidationError("Requested amount cannot exceed tuition fee.")
-        if self.siblings_in_school > self.siblings_total:
-            raise ValidationError("Siblings in school cannot exceed total siblings.")
-        if self.family_income < 0:
-            raise ValidationError("Family income cannot be negative.")
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.id_number}"
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+
+class BursaryApplication(models.Model):
+    """Main bursary application model"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('under_review', 'Under Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    EDUCATION_LEVEL_CHOICES = [
+        ('primary', 'Primary School'),
+        ('secondary', 'Secondary School'),
+        ('college', 'College'),
+        ('university', 'University'),
+    ]
+
+    FAMILY_STATUS_CHOICES = [
+        ('both_parents', 'Both Parents Alive'),
+        ('single_parent', 'Single Parent'),
+        ('orphan', 'Orphan'),
+        ('guardian', 'Under Guardian'),
+    ]
+
+    # Applicant Information
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='applications')
+    application_number = models.CharField(max_length=20, unique=True, editable=False)
+    
+    # Student Information
+    student_name = models.CharField(max_length=200)
+    institution_name = models.CharField(max_length=200)
+    admission_number = models.CharField(max_length=50)
+    education_level = models.CharField(max_length=20, choices=EDUCATION_LEVEL_CHOICES)
+    course_program = models.CharField(max_length=200)
+    year_of_study = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(8)]
+    )
+    
+    # Financial Information
+    annual_family_income = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    tuition_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    amount_requested = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    
+    # Family Information
+    family_status = models.CharField(max_length=20, choices=FAMILY_STATUS_CHOICES)
+    number_of_siblings = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(20)]
+    )
+    siblings_in_school = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(20)]
+    )
+    
+    # Parent/Guardian Information
+    parent_guardian_name = models.CharField(max_length=200)
+    parent_guardian_phone = models.CharField(
+        max_length=15,
+        validators=[RegexValidator(r'^\+?1?\d{9,15}$', 'Enter a valid phone number')]
+    )
+    parent_guardian_occupation = models.CharField(max_length=100)
+    
+    # Additional Information
+    reason_for_application = models.TextField(max_length=1000)
+    previous_bursary_recipient = models.BooleanField(default=False)
+    
+    # Application Status and Tracking
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='pending',
+        db_index=True,  # Index for faster queries
+        help_text="Current status of the bursary application"
+    )
+    submitted_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when application was first submitted"
+    )
+    reviewed_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Timestamp when application was reviewed"
+    )
+    reviewer_comments = models.TextField(
+        blank=True,
+        help_text="Comments from the reviewer about the application"
+    )
+    
+    # Metadata - Audit Trail
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,  # Index for analytics and reporting
+        help_text="Timestamp when record was created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp when record was last updated"
+    )
 
     def __str__(self):
-        return f"{self.user.username} - {self.institution_name} ({self.status})"
+        return f"{self.application_number} - {self.student_name} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        if not self.application_number:
+            # Generate unique application number
+            import uuid
+            self.application_number = f"BUR{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+    @property
+    def is_editable(self):
+        """Check if application can be edited (only pending applications)"""
+        return self.status == 'pending'
+
+    @property
+    def days_since_submission(self):
+        """Calculate days since application was submitted"""
+        from django.utils import timezone
+        if self.submitted_at:
+            delta = timezone.now() - self.submitted_at
+            return delta.days
+        return 0
+
+    @property
+    def approval_percentage(self):
+        """Calculate what percentage of tuition fee is being requested"""
+        if self.tuition_fee and self.tuition_fee > 0:
+            return (self.amount_requested / self.tuition_fee) * 100
+        return 0
+
+    def get_status_color(self):
+        """Return color code for status display"""
+        status_colors = {
+            'pending': '#FFA500',
+            'under_review': '#2196F3',
+            'approved': '#4CAF50',
+            'rejected': '#F44336',
+        }
+        return status_colors.get(self.status, '#999999')
+
+    class Meta:
+        verbose_name = "Bursary Application"
+        verbose_name_plural = "Bursary Applications"
+        ordering = ['-submitted_at']
+        indexes = [
+            models.Index(fields=['-submitted_at'], name='idx_submitted_at'),
+            models.Index(fields=['status'], name='idx_status'),
+            models.Index(fields=['created_at'], name='idx_created_at'),
+            models.Index(fields=['education_level'], name='idx_edu_level'),
+        ]
+        # Permissions for different user roles
+        permissions = [
+            ("review_application", "Can review bursary applications"),
+            ("approve_application", "Can approve bursary applications"),
+            ("reject_application", "Can reject bursary applications"),
+            ("view_analytics", "Can view application analytics"),
+        ]
 
 
 class Document(models.Model):
-    application = models.ForeignKey(BursaryApplication, on_delete=models.CASCADE, related_name="documents")
-    file = models.FileField(upload_to=upload_to)
+    """Model for storing application documents"""
+    
+    DOCUMENT_TYPE_CHOICES = [
+        ('id_copy', 'ID Copy'),
+        ('admission_letter', 'Admission Letter'),
+        ('fee_structure', 'Fee Structure'),
+        ('income_proof', 'Proof of Income'),
+        ('parent_id', 'Parent/Guardian ID'),
+        ('birth_certificate', 'Birth Certificate'),
+        ('death_certificate', 'Death Certificate (if applicable)'),
+        ('other', 'Other Document'),
+    ]
+
+    application = models.ForeignKey(
+        BursaryApplication,
+        on_delete=models.CASCADE,
+        related_name='documents'
+    )
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES)
+    file = models.FileField(upload_to='bursary_documents/%Y/%m/')
+    description = models.CharField(max_length=200, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Document for {self.application}"
+        return f"{self.get_document_type_display()} - {self.application.application_number}"
+
+    class Meta:
+        verbose_name = "Document"
+        verbose_name_plural = "Documents"
+        ordering = ['-uploaded_at']
