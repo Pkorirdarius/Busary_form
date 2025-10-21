@@ -16,10 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from . import views
+from django.conf import settings
+from django.conf.urls.static import static
+from backend_logic import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("bursary/", views.ApplicationListView.as_view(), name="bursary_list"),
     path('bursary/apply/', views.BursaryCreateView.as_view(), name='bursary_apply'),
-    
+    path("bursary/<int:pk>/edit/", views.BursaryUpdateView.as_view(), name="bursary_update"),
+    path("bursary/<int:pk>/", views.BursaryDetailView.as_view(), name="bursary_detail"),
+    path("bursary/success/", views.ApplicationSuccessView.as_view(), name="application_success"),
 ]
