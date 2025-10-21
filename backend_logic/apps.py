@@ -11,4 +11,4 @@ class BackendLogicConfig(AppConfig):
         Import signals when Django starts
         This ensures signal handlers are registered
         """
-        import applications.signals  # noqa
+        import backend_logic.signals  # noqa
