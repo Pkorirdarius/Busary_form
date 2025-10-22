@@ -4,7 +4,7 @@ from django.db.models import Count, Sum, Avg, Q, F
 from django.db.models.functions import TruncDate, TruncMonth
 from django.utils import timezone
 from datetime import timedelta
-from .models import BursaryApplication, ApplicationStatusLog
+from .models import BursaryApplication
 
 
 @login_required

@@ -26,8 +26,6 @@ urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
     
     # Application routes
-    path('bursary/', views.bursary_application, name='bursary_form'),
-    path('bursary/success/', views.bursary_success, name='bursary_success'),
     path('application/apply/', views.BursaryCreateView.as_view(), name='bursary_apply'),
     path('application/<int:pk>/', views.BursaryDetailView.as_view(), name='bursary_detail'),
     path('application/<int:pk>/edit/', views.BursaryUpdateView.as_view(), name='bursary_update'),

@@ -1,4 +1,4 @@
-from django.views.generic import CreateView, UpdateView, DetailView, ListView
+from django.views.generic import TemplateView, CreateView, UpdateView, DetailView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
@@ -9,7 +9,8 @@ from django.shortcuts import render, redirect
 from .models import BursaryApplication, UserProfile, Document
 from .forms import BursaryApplicationForm, UserProfileForm, DocumentFormSet
 
-
+class HomeView(TemplateView):
+    template_name = 'templates/applications/busary_forms.html'
 class BursaryCreateView(CreateView):
     """
     Class-Based View for creating a new bursary application.
@@ -17,7 +18,7 @@ class BursaryCreateView(CreateView):
     """
     model = BursaryApplication
     form_class = BursaryApplicationForm
-    template_name = 'applications/bursary_form.html'
+    template_name = 'templates/applications/bursary_form.html'
     success_url = reverse_lazy('application_success')
 
     def get_context_data(self, **kwargs):
