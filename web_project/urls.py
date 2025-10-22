@@ -15,23 +15,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from backend_logic import views, analytics
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # Main landing page
-    path('', views.HomeView.as_view(), name='home'),
+    # path('', views.HomeView.as_view(), name='home'),
     
     # Application routes
-    path('application/apply/', views.BursaryCreateView.as_view(), name='bursary_apply'),
-    path('application/<int:pk>/', views.BursaryDetailView.as_view(), name='bursary_detail'),
-    path('application/<int:pk>/edit/', views.BursaryUpdateView.as_view(), name='bursary_update'),
-    path('application/success/', views.ApplicationSuccessView.as_view(), name='application_success'),
-    path('applications/', views.ApplicationListView.as_view(), name='application_list'),
-    
+    path('bursary/', include('backend_logic.urls')),  # maps /bursary/apply/
+    path('', RedirectView.as_view(pattern_name='bursary_apply', permanent=False)),
     # Analytics routes (admin only)
     path('analytics/', analytics.analytics_dashboard, name='analytics_dashboard'),
     path('analytics/export/', analytics.export_analytics_csv, name='export_analytics'),

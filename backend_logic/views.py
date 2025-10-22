@@ -9,8 +9,6 @@ from django.shortcuts import render, redirect
 from .models import BursaryApplication, UserProfile, Document
 from .forms import BursaryApplicationForm, UserProfileForm, DocumentFormSet
 
-class HomeView(TemplateView):
-    template_name = 'templates/applications/busary_forms.html'
 class BursaryCreateView(CreateView):
     """
     Class-Based View for creating a new bursary application.
@@ -18,8 +16,8 @@ class BursaryCreateView(CreateView):
     """
     model = BursaryApplication
     form_class = BursaryApplicationForm
-    template_name = 'templates/applications/bursary_form.html'
-    success_url = reverse_lazy('application_success')
+    template_name = 'applications/busary_form.html'
+    success_url = reverse_lazy('bursary_success')
 
     def get_context_data(self, **kwargs):
         """Add document formset and profile form to context"""
@@ -113,8 +111,8 @@ class BursaryUpdateView(LoginRequiredMixin, UpdateView):
     """View for updating an existing bursary application"""
     model = BursaryApplication
     form_class = BursaryApplicationForm
-    template_name = 'applications/bursary_form.html'
-    success_url = reverse_lazy('application_success')
+    template_name = 'applications/busary_form.html'
+    success_url = reverse_lazy('bursary_success')
 
     def get_queryset(self):
         """Ensure users can only edit their own applications"""
@@ -160,7 +158,7 @@ class BursaryUpdateView(LoginRequiredMixin, UpdateView):
 class BursaryDetailView(DetailView):
     """View for displaying application details"""
     model = BursaryApplication
-    template_name = 'applications/application_detail.html'
+    template_name = 'applications/busary_form.html'
     context_object_name = 'application'
 
     def get_context_data(self, **kwargs):
@@ -185,7 +183,7 @@ class ApplicationListView(LoginRequiredMixin, ListView):
 
 class ApplicationSuccessView(DetailView):
     """Success page after application submission"""
-    template_name = 'applications/application_success.html'
+    template_name = 'applications/busary_form.html'
 
     def get(self, request, *args, **kwargs):
         """Display success message"""
@@ -246,7 +244,7 @@ def bursary_application_view(request):
                         request,
                         f'Application submitted! Number: {application.application_number}'
                     )
-                    return redirect('application_success')
+                    return redirect('bursary_success')
 
             except Exception as e:
                 messages.error(request, f'Error: {str(e)}')

@@ -131,6 +131,16 @@ class UserProfileForm(forms.ModelForm):
 
 class BursaryApplicationForm(forms.ModelForm):
     """Main bursary application form with custom validation"""
+    class Meta:
+        model = BursaryApplication
+        fields = [
+            # list the fields you want on the form, e.g.:
+            'first_name', 'last_name', 'email', 'phone',
+            'school', 'program', 'amount_requested', 'supporting_document'
+        ]
+        widgets = {
+            'amount_requested': forms.NumberInput(attrs={'min': 0}),
+        }
     
     class Meta:
         model = BursaryApplication
