@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class UserProfile(models.Model):
     """Extended user profile for bursary applicants"""
@@ -15,6 +16,8 @@ class UserProfile(models.Model):
     sub_county = models.CharField(max_length=100)
     ward = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
+    location = models.CharField(max_length=100, default='', blank=True)
+    sub_location = models.CharField(max_length=100, default='', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -63,7 +66,14 @@ class BursaryApplication(models.Model):
     year_of_study = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(8)]
     )
-    
+    # New fields from busary_form.html - STEP 2
+    inst_county = models.CharField(max_length=100, default='', blank=True)
+    inst_contact = models.CharField(max_length=15, default='', blank=True)
+    # School Performance
+    term1_score = models.CharField(max_length=50, default='', blank=True)
+    term2_score = models.CharField(max_length=50, default='', blank=True)
+    term3_score = models.CharField(max_length=50, default='', blank=True)
+
     # Financial Information
     annual_family_income = models.DecimalField(
         max_digits=12,
@@ -97,11 +107,48 @@ class BursaryApplication(models.Model):
         validators=[RegexValidator(r'^\+?1?\d{9,15}$', 'Enter a valid phone number')]
     )
     parent_guardian_occupation = models.CharField(max_length=100)
-    
-    # Additional Information
+
+    # New fields from busary_form.html - STEP 3 (Family)
+    father_name = models.CharField(max_length=200, default='', blank=True)
+    mother_name = models.CharField(max_length=200, default='', blank=True)
+    guardian_relation = models.CharField(max_length=100, default='', blank=True)
+    father_occupation = models.CharField(max_length=100, default='', blank=True)
+    mother_occupation = models.CharField(max_length=100, default='', blank=True)
+    parent_id_number = models.CharField(max_length=20, default='', blank=True)
+    is_single_parent = models.BooleanField(default=False)
+    fees_provider = models.CharField(max_length=100, default='', blank=True)
+    other_fees_provider = models.CharField(max_length=100, default='', blank=True)
+
+    # Additional Information(step 1 & 3)
     reason_for_application = models.TextField(max_length=1000)
     previous_bursary_recipient = models.BooleanField(default=False)
-    
+    # Previous Bursary Amounts
+    cdf_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    ministry_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    county_gov_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    other_bursary_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    # Disability
+    has_disability = models.BooleanField(default=False)
+    disability_nature = models.CharField(max_length=255, default='', blank=True)
+    disability_reg_no = models.CharField(max_length=50, default='', blank=True)
+    # Orphan status (implicitly handled by family_status='orphan' but added for clarity)
+    is_orphan = models.BooleanField(default=False) 
+
+    # Declaration/Verification fields from busary_form.html - STEP 5
+    student_signature_name = models.CharField(max_length=200, default='')
+    student_declaration_date = models.DateField(default=timezone.now)
+    parent_signature_name = models.CharField(max_length=200, default='')
+    parent_declaration_date = models.DateField(default=timezone.now)
+    chief_full_name = models.CharField(max_length=200, default='', blank=True)
+    chief_sub_location = models.CharField(max_length=100, default='', blank=True)
+    chief_county = models.CharField(max_length=100, default='', blank=True)
+    chief_sub_county = models.CharField(max_length=100, default='', blank=True)
+    chief_location = models.CharField(max_length=100, default='', blank=True)
+    chief_comments = models.TextField(max_length=500, default='', blank=True)
+    chief_signature_name = models.CharField(max_length=200, default='', blank=True)
+    chief_date = models.DateField(null=True, blank=True)
+    # Note: rubberStamp will be a document upload (or handled as an admin-only field)
+
     # Application Status and Tracking
     status = models.CharField(
         max_length=20, 

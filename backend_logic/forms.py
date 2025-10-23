@@ -129,19 +129,9 @@ class UserProfileForm(forms.ModelForm):
         return dob
 
 
-class BursaryApplicationForm(forms.ModelForm):
-    """Main bursary application form with custom validation"""
-    class Meta:
-        model = BursaryApplication
-        fields = [
-            # list the fields you want on the form, e.g.:
-            'first_name', 'last_name', 'email', 'phone',
-            'school', 'program', 'amount_requested', 'supporting_document'
-        ]
-        widgets = {
-            'amount_requested': forms.NumberInput(attrs={'min': 0}),
-        }
-    
+class BaseBursaryApplicationForm(forms.ModelForm):
+# ... (BursaryApplicationForm renamed and fields simplified)
+    """Base form for bursary application model fields"""
     class Meta:
         model = BursaryApplication
         fields = [
@@ -150,7 +140,20 @@ class BursaryApplicationForm(forms.ModelForm):
             'annual_family_income', 'tuition_fee', 'amount_requested',
             'family_status', 'number_of_siblings', 'siblings_in_school',
             'parent_guardian_name', 'parent_guardian_phone', 'parent_guardian_occupation',
-            'reason_for_application', 'previous_bursary_recipient'
+            'reason_for_application', 'previous_bursary_recipient',
+            
+            # NEW fields added to model
+            'inst_county', 'inst_contact', 'term1_score', 'term2_score', 'term3_score',
+            'father_name', 'mother_name', 'guardian_relation', 'father_occupation',
+            'mother_occupation', 'parent_id_number', 'is_single_parent',
+            'fees_provider', 'other_fees_provider', 'cdf_amount', 'ministry_amount', 
+            'county_gov_amount', 'other_bursary_amount', 'has_disability', 
+            'disability_nature', 'disability_reg_no', 'is_orphan',
+            'student_signature_name', 'student_declaration_date',
+            'parent_signature_name', 'parent_declaration_date',
+            'chief_full_name', 'chief_sub_location', 'chief_county',
+            'chief_sub_county', 'chief_location', 'chief_comments',
+            'chief_signature_name', 'chief_date'
         ]
         widgets = {
             'student_name': forms.TextInput(attrs={'placeholder': 'Full Name'}),
@@ -169,6 +172,16 @@ class BursaryApplicationForm(forms.ModelForm):
                 'placeholder': 'Explain why you need this bursary (max 1000 characters)',
                 'maxlength': '1000'
             }),
+            'inst_contact': forms.TextInput(attrs={'placeholder': 'Institution Phone/Email'}),
+            'parent_id_number': forms.TextInput(attrs={'placeholder': 'Parent/Guardian ID Number'}),
+            'student_declaration_date': forms.DateInput(attrs={'type': 'date'}),
+            'parent_declaration_date': forms.DateInput(attrs={'type': 'date'}),
+            'chief_date': forms.DateInput(attrs={'type': 'date'}),
+            'is_single_parent': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'is_orphan': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'has_disability': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'previous_bursary_recipient': forms.RadioSelect(choices=[(True, 'Yes'), (False, 'No')]),
+            'chief_comments': forms.Textarea(attrs={'rows': 3}),
         }
 
     def clean_student_name(self):
@@ -401,6 +414,151 @@ class BursaryApplicationForm(forms.ModelForm):
         
         return cleaned_data
 
+class MultiStepBursaryApplicationForm(forms.Form):
+    """
+    A non-ModelForm to handle all fields presented in busary_form.html,
+    combining UserProfile, BursaryApplication, and temporary fields.
+    The view will handle saving to the respective models.
+    """
+    
+    # STEP 1: PERSONAL DETAILS (Includes UserProfile and BursaryApplication fields)
+    fullName = forms.CharField(max_length=200, label="Student's Full Name") # Maps to student_name
+    idNumber = forms.CharField(max_length=20, label="ID/Birth Cert Number") # Maps to UserProfile.id_number
+    dob = forms.DateField(label="Date of Birth", widget=forms.DateInput(attrs={'type': 'date'})) # Maps to UserProfile.date_of_birth
+    gender = forms.ChoiceField(choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')], label="Gender") # Will need to be stored in UserProfile or custom field
+    phone = forms.CharField(max_length=15, label="Student Mobile No.") # Maps to UserProfile.phone_number
+    email = forms.EmailField(required=False, label="Student Email") # Maps to User.email (via UserProfile)
+
+    # Location (Maps to UserProfile fields)
+    county = forms.CharField(max_length=100, label="County") # Maps to UserProfile.county
+    subCounty = forms.CharField(max_length=100, label="Sub-County") # Maps to UserProfile.sub_county
+    ward = forms.CharField(max_length=100, label="Ward") # Maps to UserProfile.ward
+    location = forms.CharField(max_length=100, label="Location") # Maps to UserProfile.location (NEW)
+    subLocation = forms.CharField(max_length=100, label="Sub-Location") # Maps to UserProfile.sub_location (NEW)
+    village = forms.CharField(max_length=100, label="Village/Estate") # Maps to UserProfile.village
+    chiefName = forms.CharField(max_length=200, label="Name of Area Chief/Asst Chief") # Temporary form field
+
+    # Status & Disability (Maps to BursaryApplication fields)
+    orphan = forms.ChoiceField(choices=[(True, 'Yes'), (False, 'No')], widget=forms.RadioSelect, label="Are you an Orphan?") # Maps to is_orphan
+    disability = forms.ChoiceField(choices=[(True, 'Yes'), (False, 'No')], widget=forms.RadioSelect, label="Do you have any physical disability?") # Maps to has_disability
+    disabilityNature = forms.CharField(max_length=255, required=False, label="Nature of Disability") # Maps to disability_nature
+    disabilityRegNo = forms.CharField(max_length=50, required=False, label="Disability Registration No.") # Maps to disability_reg_no
+    
+    # Previous Bursary (Maps to BursaryApplication fields)
+    previousBursary = forms.ChoiceField(choices=[(True, 'Yes'), (False, 'No')], widget=forms.RadioSelect, label="Have you received any previous bursary?") # Maps to previous_bursary_recipient
+    cdfAmount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, label="CDF Amount") # Maps to cdf_amount
+    ministryAmount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, label="Ministry Amount") # Maps to ministry_amount
+    countyGovAmount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, label="County Gov Amount") # Maps to county_gov_amount
+    otherBursary = forms.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, label="Other Bursary Amount") # Maps to other_bursary_amount
+    
+    # STEP 2: INSTITUTION
+    institution = forms.CharField(max_length=200, label="Institution Name") # Maps to institution_name
+    level = forms.ChoiceField(choices=BursaryApplication.EDUCATION_LEVEL_CHOICES, label="Education Level") # Maps to education_level
+    course = forms.CharField(max_length=200, label="Course/Program") # Maps to course_program
+    yearForm = forms.IntegerField(min_value=1, max_value=8, label="Year/Form of Study") # Maps to year_of_study
+    instCounty = forms.CharField(max_length=100, label="Institution County") # Maps to inst_county (NEW)
+    instContact = forms.CharField(max_length=15, label="Institution Contact No.") # Maps to inst_contact (NEW)
+    
+    # School Performance (Maps to BursaryApplication fields)
+    term1 = forms.CharField(max_length=50, required=False, label="Term 1 Score/Grade") # Maps to term1_score
+    term2 = forms.CharField(max_length=50, required=False, label="Term 2 Score/Grade") # Maps to term2_score
+    term3 = forms.CharField(max_length=50, required=False, label="Term 3 Score/Grade") # Maps to term3_score
+    
+    # STEP 3: FAMILY
+    fatherName = forms.CharField(max_length=200, required=False, label="Father's Full Name") # Maps to father_name (NEW)
+    motherName = forms.CharField(max_length=200, required=False, label="Mother's Full Name") # Maps to mother_name (NEW)
+    guardianName = forms.CharField(max_length=200, label="Guardian's Full Name") # Maps to parent_guardian_name
+    relation = forms.CharField(max_length=100, label="Relation to Guardian") # Maps to guardian_relation (NEW)
+    fatherOccupation = forms.CharField(max_length=100, required=False, label="Father's Occupation") # Maps to father_occupation (NEW)
+    motherOccupation = forms.CharField(max_length=100, required=False, label="Mother's Occupation") # Maps to mother_occupation (NEW)
+    parentPhone = forms.CharField(max_length=15, label="Parent/Guardian Mobile No.") # Maps to parent_guardian_phone
+    parentId = forms.CharField(max_length=20, required=False, label="Parent/Guardian ID No.") # Maps to parent_id_number (NEW)
+    
+    # Family Status
+    bothParentsAlive = forms.ChoiceField(choices=[(True, 'Yes'), (False, 'No')], widget=forms.RadioSelect, label="Are both parents alive?") # Temporary form field (helps determine family_status)
+    singleParent = forms.ChoiceField(choices=[(True, 'Yes'), (False, 'No')], widget=forms.RadioSelect, label="Are you from a single parent family?") # Maps to is_single_parent
+    feesProvider = forms.CharField(max_length=100, required=False, label="Who is paying for your fees?") # Maps to fees_provider (NEW)
+    otherProvider = forms.CharField(max_length=100, required=False, label="Other Provider (if applicable)") # Maps to other_fees_provider (NEW)
+    
+    # Missing from form but essential for model: family_status (calculated in clean)
+    # Missing from form but essential for model: reason_for_application (The form doesn't show this, but the model requires it - assuming it's hidden or missed)
+    # Assuming reason_for_application is collected elsewhere or added:
+    reason_for_application = forms.CharField(
+        max_length=1000, 
+        widget=forms.Textarea(attrs={'rows': 5}), 
+        label="Reason for Application"
+    ) # Maps to reason_for_application
+
+    # Missing from form but essential for model: number_of_siblings, siblings_in_school (assuming these are missing from the HTML snippet)
+    number_of_siblings = forms.IntegerField(min_value=0, max_value=20, required=False, label="Number of Siblings")
+    siblings_in_school = forms.IntegerField(min_value=0, max_value=20, required=False, label="Siblings In School")
+
+    # STEP 4: DOCUMENTS (File fields map to the Document model via a FormSet, not the main form)
+    # These fields are required for the front-end validation but the actual file data
+    # will be handled by DocumentFormSet in the view.
+    idFile = forms.FileField(required=True, label="Student's ID/Birth Certificate")
+    reportForm = forms.FileField(required=True, label="Students' Transcript/Report Form")
+    parentIdFile = forms.FileField(required=False, label="Parent/Guardian National Identity Card")
+    studentIdFile = forms.FileField(required=False, label="Student National Identity Card (if applicable)")
+    instIdFile = forms.FileField(required=False, label="Secondary/College/University ID Card")
+    instLetter = forms.FileField(required=False, label="Admission Letter (Colleges and Universities)")
+    guardianFile = forms.FileField(required=False, label="Guardianship Documents (for orphans)")
+    passportPhoto = forms.FileField(required=False, label="Student Passport Photo")
+
+    # STEP 5: DECLARATION & SUBMIT
+    signature = forms.CharField(max_length=200, label="Student Signature (Full Name)") # Maps to student_signature_name
+    studentDate = forms.DateField(label="Date", widget=forms.DateInput(attrs={'type': 'date'})) # Maps to student_declaration_date
+    parentSignature = forms.CharField(max_length=200, label="Parent/Guardian Signature (Full Name)") # Maps to parent_signature_name
+    parentDate = forms.DateField(label="Date", widget=forms.DateInput(attrs={'type': 'date'})) # Maps to parent_declaration_date
+    
+    # Verification by Chief
+    chiefFullName = forms.CharField(max_length=200, required=False, label="Chief/Asst Chief Full Name") # Maps to chief_full_name
+    chiefSubLocation = forms.CharField(max_length=100, required=False, label="Chief's Sub-Location") # Maps to chief_sub_location
+    chiefCounty = forms.CharField(max_length=100, required=False, label="Chief's County") # Maps to chief_county
+    chiefSubCounty = forms.CharField(max_length=100, required=False, label="Chief's Sub-County") # Maps to chief_sub_county
+    chiefLocation = forms.CharField(max_length=100, required=False, label="Chief's Location") # Maps to chief_location
+    chiefComments = forms.CharField(max_length=500, required=False, widget=forms.Textarea(attrs={'rows': 3}), label="Chief's Comments") # Maps to chief_comments
+    chiefSignature = forms.CharField(max_length=200, required=False, label="Chief's Signature (Full Name)") # Maps to chief_signature_name
+    chiefDate = forms.DateField(required=False, label="Date", widget=forms.DateInput(attrs={'type': 'date'})) # Maps to chief_date
+    rubberStamp = forms.FileField(required=False, label="Official Rubber Stamp") # New Document field
+
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}), label="Official Use Only Notes") # Temporary form field
+    
+    def clean(self):
+        """Cross-field and logic validation for the combined form."""
+        cleaned_data = super().clean()
+        
+        # 1. Determine family_status based on form inputs
+        orphan = cleaned_data.get('orphan') == 'True'
+        both_parents_alive = cleaned_data.get('bothParentsAlive') == 'True'
+        single_parent = cleaned_data.get('singleParent') == 'True'
+        
+        if orphan:
+            cleaned_data['family_status'] = 'orphan'
+            cleaned_data['is_orphan'] = True
+        elif single_parent:
+            cleaned_data['family_status'] = 'single_parent'
+            cleaned_data['is_single_parent'] = True
+        elif both_parents_alive:
+            cleaned_data['family_status'] = 'both_parents'
+            cleaned_data['is_single_parent'] = False
+        elif cleaned_data.get('relation') and cleaned_data.get('relation').lower() not in ['father', 'mother']:
+             cleaned_data['family_status'] = 'guardian' # Fallback if relation is not a parent
+        else:
+            # Default or error if logic is unclear
+            if not cleaned_data.get('family_status'):
+                self.add_error(None, "Family status could not be determined. Please check orphan, single parent, and parent status.")
+
+        # 2. Validate fees provider logic
+        fees_provider = cleaned_data.get('feesProvider')
+        other_provider = cleaned_data.get('otherProvider')
+        if fees_provider and fees_provider.lower() == 'other' and not other_provider:
+             self.add_error('otherProvider', "If 'Other' is selected as fees provider, please specify the name.")
+
+        # 3. Validate Student Name and ID fields
+        # ... (similar validations from BaseBursaryApplicationForm clean methods should be copied/adapted here)
+        
+        return cleaned_data
 
 class DocumentUploadForm(forms.ModelForm):
     """Form for uploading supporting documents with file validation"""

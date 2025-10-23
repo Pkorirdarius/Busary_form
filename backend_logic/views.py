@@ -1,246 +1,149 @@
-from django.views.generic import TemplateView, CreateView, UpdateView, DetailView, ListView
+from django.views.generic import UpdateView, DetailView # Cleaned up imports
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import BursaryApplication, UserProfile, Document
-from .forms import BursaryApplicationForm, UserProfileForm, DocumentFormSet
+# UserProfileForm removed from imports as it is no longer used
+from .forms import MultiStepBursaryApplicationForm, DocumentFormSet, DocumentUploadForm 
 
-class BursaryCreateView(CreateView):
+def bursary_apply(request):
     """
-    Class-Based View for creating a new bursary application.
-    Handles form rendering, validation, and submission.
-    """
-    model = BursaryApplication
-    form_class = BursaryApplicationForm
-    template_name = 'applications/busary_form.html'
-    success_url = reverse_lazy('bursary_success')
-
-    def get_context_data(self, **kwargs):
-        """Add document formset and profile form to context"""
-        context = super().get_context_data(**kwargs)
-        
-        if self.request.POST:
-            context['profile_form'] = UserProfileForm(self.request.POST)
-            context['document_formset'] = DocumentFormSet(
-                self.request.POST,
-                self.request.FILES
-            )
-        else:
-            context['profile_form'] = UserProfileForm()
-            context['document_formset'] = DocumentFormSet()
-        
-        return context
-
-    def form_valid(self, form):
-        """
-        Handle form submission with profile and documents.
-        Uses transaction to ensure data consistency.
-        """
-        context = self.get_context_data()
-        profile_form = context['profile_form']
-        document_formset = context['document_formset']
-
-        # Validate all forms
-        if not (profile_form.is_valid() and document_formset.is_valid()):
-            return self.form_invalid(form)
-
-        try:
-            with transaction.atomic():
-                # Create or get user
-                from django.contrib.auth.models import User
-                user, created = User.objects.get_or_create(
-                    email=profile_form.cleaned_data['email'],
-                    defaults={
-                        'username': profile_form.cleaned_data['email'],
-                        'first_name': profile_form.cleaned_data['first_name'],
-                        'last_name': profile_form.cleaned_data['last_name'],
-                    }
-                )
-
-                # Create or update user profile
-                profile, created = UserProfile.objects.update_or_create(
-                    user=user,
-                    defaults={
-                        'phone_number': profile_form.cleaned_data['phone_number'],
-                        'id_number': profile_form.cleaned_data['id_number'],
-                        'date_of_birth': profile_form.cleaned_data['date_of_birth'],
-                        'county': profile_form.cleaned_data['county'],
-                        'sub_county': profile_form.cleaned_data['sub_county'],
-                        'ward': profile_form.cleaned_data['ward'],
-                        'village': profile_form.cleaned_data['village'],
-                    }
-                )
-
-                # Save the application
-                application = form.save(commit=False)
-                application.user_profile = profile
-                application.save()
-
-                # Save documents
-                document_formset.instance = application
-                document_formset.save()
-
-                messages.success(
-                    self.request,
-                    f'Application submitted successfully! Your application number is: {application.application_number}'
-                )
-
-                return HttpResponseRedirect(self.get_success_url())
-
-        except Exception as e:
-            messages.error(
-                self.request,
-                f'An error occurred while submitting your application: {str(e)}'
-            )
-            return self.form_invalid(form)
-
-    def form_invalid(self, form):
-        """Handle invalid form submission"""
-        messages.error(
-            self.request,
-            'Please correct the errors below and try again.'
-        )
-        return super().form_invalid(form)
-
-
-class BursaryUpdateView(LoginRequiredMixin, UpdateView):
-    """View for updating an existing bursary application"""
-    model = BursaryApplication
-    form_class = BursaryApplicationForm
-    template_name = 'applications/busary_form.html'
-    success_url = reverse_lazy('bursary_success')
-
-    def get_queryset(self):
-        """Ensure users can only edit their own applications"""
-        return BursaryApplication.objects.filter(
-            user_profile__user=self.request.user,
-            status='pending'  # Only allow editing pending applications
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        if self.request.POST:
-            context['document_formset'] = DocumentFormSet(
-                self.request.POST,
-                self.request.FILES,
-                instance=self.object
-            )
-        else:
-            context['document_formset'] = DocumentFormSet(instance=self.object)
-        
-        context['is_update'] = True
-        context['application_form'] = context.get('form')
-        return context
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        document_formset = context['document_formset']
-
-        if document_formset.is_valid():
-            with transaction.atomic():
-                self.object = form.save()
-                document_formset.instance = self.object
-                document_formset.save()
-                
-                messages.success(
-                    self.request,
-                    'Application updated successfully!'
-                )
-                return HttpResponseRedirect(self.get_success_url())
-        else:
-            return self.form_invalid(form)
-
-
-class BursaryDetailView(DetailView):
-    """View for displaying application details"""
-    model = BursaryApplication
-    template_name = 'applications/busary_form.html'
-    context_object_name = 'application'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['documents'] = self.object.documents.all()
-        return context
-
-
-class ApplicationListView(LoginRequiredMixin, ListView):
-    """View for listing user's applications"""
-    model = BursaryApplication
-    template_name = 'applications/application_list.html'
-    context_object_name = 'applications'
-    paginate_by = 10
-
-    def get_queryset(self):
-        """Return applications for the current user"""
-        return BursaryApplication.objects.filter(
-            user_profile__user=self.request.user
-        ).order_by('-submitted_at')
-
-
-class ApplicationSuccessView(DetailView):
-    """Success page after application submission"""
-    template_name = 'applications/busary_form.html'
-
-    def get(self, request, *args, **kwargs):
-        """Display success message"""
-        return render(request, self.template_name)
-
-
-# Function-based view alternative for simple form rendering
-def bursary_application_view(request):
-    """
-    Function-based view alternative for handling bursary applications.
-    Can be used instead of BursaryCreateView if preferred.
+    Function-Based View to handle the multi-step bursary application form, 
+    mapping data from the MultiStepBursaryApplicationForm to User, UserProfile, and BursaryApplication models.
     """
     if request.method == 'POST':
-        application_form = BursaryApplicationForm(request.POST)
-        profile_form = UserProfileForm(request.POST)
-        document_formset = DocumentFormSet(request.POST, request.FILES)
-
-        if (application_form.is_valid() and 
-            profile_form.is_valid() and 
-            document_formset.is_valid()):
-            
+        main_form = MultiStepBursaryApplicationForm(request.POST, request.FILES)
+        document_formset = DocumentFormSet(request.POST, request.FILES, prefix='document_formset')
+        
+        if main_form.is_valid() and document_formset.is_valid():
             try:
                 with transaction.atomic():
-                    # Create user and profile
-                    from django.contrib.auth.models import User
+                    data = main_form.cleaned_data
+                    
+                    # 1a. Get or Create User and update email/full name
+                    username_key = data.get('idNumber') or data.get('email') or data['fullName'].replace(' ', '_')
+                    
                     user, created = User.objects.get_or_create(
-                        email=profile_form.cleaned_data['email'],
+                        username=username_key, 
                         defaults={
-                            'username': profile_form.cleaned_data['email'],
-                            'first_name': profile_form.cleaned_data['first_name'],
-                            'last_name': profile_form.cleaned_data['last_name'],
+                            'email': data.get('email', f'{username_key}@example.com'),
+                            'first_name': data['fullName'].split(' ')[0],
+                            'last_name': ' '.join(data['fullName'].split(' ')[1:]) or data['fullName'].split(' ')[0],
                         }
                     )
-
+                    user.email = data.get('email', user.email)
+                    user.first_name = data['fullName'].split(' ')[0]
+                    user.last_name = ' '.join(data['fullName'].split(' ')[1:]) or data['fullName'].split(' ')[0]
+                    user.save()
+                    
+                    # 1b. Get or Create UserProfile (using data from MultiStepBursaryApplicationForm)
                     profile, created = UserProfile.objects.update_or_create(
                         user=user,
                         defaults={
-                            'phone_number': profile_form.cleaned_data['phone_number'],
-                            'id_number': profile_form.cleaned_data['id_number'],
-                            'date_of_birth': profile_form.cleaned_data['date_of_birth'],
-                            'county': profile_form.cleaned_data['county'],
-                            'sub_county': profile_form.cleaned_data['sub_county'],
-                            'ward': profile_form.cleaned_data['ward'],
-                            'village': profile_form.cleaned_data['village'],
+                            'phone_number': data.get('phone'),
+                            'id_number': data.get('idNumber'),
+                            'date_of_birth': data.get('dob'),
+                            'county': data.get('county'),
+                            'sub_county': data.get('subCounty'),
+                            'ward': data.get('ward'),
+                            'village': data.get('village'),
+                            'location': data.get('location', ''), 
+                            'sub_location': data.get('subLocation', ''), 
                         }
                     )
+                    
+                    # 1c. Create BursaryApplication (Mapping form fields to model fields)
+                    application = BursaryApplication.objects.create(
+                        user_profile=profile,
+                        
+                        # Student Info
+                        student_name=data.get('fullName'),
+                        institution_name=data.get('institution'),
+                        admission_number=data.get('idNumber'), 
+                        education_level=data.get('level'),
+                        course_program=data.get('course'),
+                        year_of_study=data.get('yearForm', 1),
+                        inst_county=data.get('instCounty', ''), 
+                        inst_contact=data.get('instContact', ''), 
+                        term1_score=data.get('term1', ''),
+                        term2_score=data.get('term2', ''),
+                        term3_score=data.get('term3', ''),
+                        
+                        # Financial Info 
+                        annual_family_income=data.get('annual_family_income', 0.00), 
+                        tuition_fee=data.get('tuition_fee', 0.00),
+                        amount_requested=data.get('amount_requested', 0.00),
+                        
+                        # Family Info
+                        family_status=data.get('family_status', 'pending'), 
+                        number_of_siblings=data.get('number_of_siblings', 0),
+                        siblings_in_school=data.get('siblings_in_school', 0),
+                        father_name=data.get('fatherName', ''),
+                        mother_name=data.get('motherName', ''),
+                        father_occupation=data.get('fatherOccupation', ''),
+                        mother_occupation=data.get('motherOccupation', ''),
+                        is_single_parent=data.get('singleParent') == 'True',
+                        fees_provider=data.get('feesProvider', ''),
+                        other_fees_provider=data.get('otherProvider', ''),
+                        
+                        # Parent/Guardian Info
+                        parent_guardian_name=data.get('guardianName'),
+                        parent_guardian_phone=data.get('parentPhone'),
+                        parent_guardian_occupation=data.get('fatherOccupation', '') or data.get('motherOccupation', '') or 'N/A', 
+                        parent_id_number=data.get('parentId', ''),
+                        guardian_relation=data.get('relation', ''),
+                        
+                        # Additional Info
+                        reason_for_application=data.get('reason_for_application', 'No reason provided.'),
+                        previous_bursary_recipient=data.get('previousBursary') == 'True',
+                        cdf_amount=data.get('cdfAmount', 0.00),
+                        ministry_amount=data.get('ministryAmount', 0.00),
+                        county_gov_amount=data.get('countyGovAmount', 0.00),
+                        other_bursary_amount=data.get('otherBursary', 0.00),
+                        has_disability=data.get('disability') == 'True',
+                        disability_nature=data.get('disabilityNature', ''),
+                        disability_reg_no=data.get('disabilityRegNo', ''),
+                        is_orphan=data.get('orphan') == 'True',
+                        
+                        # Declaration & Chief Verification
+                        student_signature_name=data.get('signature'),
+                        student_declaration_date=data.get('studentDate'),
+                        parent_signature_name=data.get('parentSignature'),
+                        parent_declaration_date=data.get('parentDate'),
+                        chief_full_name=data.get('chiefFullName', ''),
+                        chief_sub_location=data.get('chiefSubLocation', ''),
+                        chief_county=data.get('chiefCounty', ''),
+                        chief_sub_county=data.get('chiefSubCounty', ''),
+                        chief_location=data.get('chiefLocation', ''),
+                        chief_comments=data.get('chiefComments', ''),
+                        chief_signature_name=data.get('chiefSignature', ''),
+                        chief_date=data.get('chiefDate', None),
+                    )
 
-                    # Save application
-                    application = application_form.save(commit=False)
-                    application.user_profile = profile
-                    application.save()
-
-                    # Save documents
+                    # --- 2. Process Document Formset and rubberStamp ---
                     document_formset.instance = application
-                    document_formset.save()
-
+                    documents = document_formset.save(commit=False)
+                    
+                    # Handle the rubberStamp file from the main form (Step 5)
+                    if 'rubberStamp' in request.FILES:
+                        Document.objects.create(
+                            application=application,
+                            document_type='other',
+                            file=request.FILES['rubberStamp'],
+                            description='Chief Verification Rubber Stamp'
+                        )
+                    
+                    for document in documents:
+                        document.save()
+                    
                     messages.success(
                         request,
                         f'Application submitted! Number: {application.application_number}'
@@ -248,17 +151,74 @@ def bursary_application_view(request):
                     return redirect('bursary_success')
 
             except Exception as e:
-                messages.error(request, f'Error: {str(e)}')
+                logger.error(f"Bursary application error: {e}", exc_info=True)
+                messages.error(request, f'An unexpected error occurred during submission. Error: {str(e)}')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            messages.error(request, 'Please correct the errors below and try again.')
     else:
-        application_form = BursaryApplicationForm()
-        profile_form = UserProfileForm()
-        document_formset = DocumentFormSet()
+        # GET request: initialize forms
+        main_form = MultiStepBursaryApplicationForm()
+        document_formset = DocumentFormSet(prefix='document_formset')
 
     context = {
-        'form': application_form,
-        'profile_form': profile_form,
+        'form': main_form,
         'document_formset': document_formset,
     }
     return render(request, 'applications/busary_form.html', context)
+
+class BursaryDetailView(DetailView):
+    model = BursaryApplication
+    template_name = 'applications/busary_form.html'
+    context_object_name = 'application'
+
+class BursaryUpdateView(LoginRequiredMixin, UpdateView):
+    model = BursaryApplication
+    form_class = MultiStepBursaryApplicationForm
+    template_name = 'applications/busary_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('bursary_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['document_formset'] = DocumentFormSet(
+                self.request.POST, 
+                self.request.FILES, 
+                instance=self.object, 
+                prefix='document_formset'
+            )
+        else:
+            context['document_formset'] = DocumentFormSet(
+                instance=self.object, 
+                prefix='document_formset'
+            )
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        document_formset = context['document_formset']
+        
+        with transaction.atomic():
+            self.object = form.save()
+            
+            if document_formset.is_valid():
+                document_formset.instance = self.object
+                documents = document_formset.save(commit=False)
+                
+                # Manual handling of rubberStamp update during form update
+                if 'rubberStamp' in self.request.FILES:
+                    Document.objects.update_or_create(
+                        application=self.object,
+                        document_type='other',
+                        description='Chief Verification Rubber Stamp',
+                        defaults={'file': self.request.FILES['rubberStamp']}
+                    )
+
+                for document in documents:
+                    document.save()
+            else:
+                return self.form_invalid(form)
+
+            messages.success(self.request, 'Application updated successfully.')
+            return HttpResponseRedirect(self.get_success_url())

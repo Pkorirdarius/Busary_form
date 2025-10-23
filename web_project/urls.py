@@ -1,39 +1,26 @@
-"""
-URL configuration for web_project project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
-from backend_logic import views, analytics
+from backend_logic import analytics # Assumes analytics views are in backend_logic/analytics.py
 
 urlpatterns = [
+    # Django Admin Interface
     path('admin/', admin.site.urls),
-    # Main landing page
-    # path('', views.HomeView.as_view(), name='home'),
     
-    # Application routes
-    path('bursary/', include('backend_logic.urls')),  # maps /bursary/apply/
-    path('', RedirectView.as_view(pattern_name='bursary_apply', permanent=False)),
-    # Analytics routes (admin only)
+    # Application Routes (All /bursary/... URLs are handled by backend_logic.urls)
+    path('bursary/', include('backend_logic.urls')), 
+    
+    # Root Redirect: Redirects '/' to '/bursary/apply/'
+    path('', RedirectView.as_view(pattern_name='bursary_apply', permanent=False), name='home'),
+    
+    # Analytics Routes (Admin access likely required)
     path('analytics/', analytics.analytics_dashboard, name='analytics_dashboard'),
     path('analytics/export/', analytics.export_analytics_csv, name='export_analytics'),
     path('analytics/timeline/<int:pk>/', analytics.application_timeline, name='application_timeline'),
 ]
+
+# Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

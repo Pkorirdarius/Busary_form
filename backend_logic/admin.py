@@ -6,8 +6,8 @@ from .models import UserProfile, BursaryApplication, Document
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     """Admin interface for UserProfile"""
-    list_display = ['user', 'id_number', 'phone_number', 'county', 'created_at']
-    list_filter = ['county', 'created_at']
+    list_display = ['user', 'id_number', 'phone_number', 'county', 'sub_county', 'location', 'created_at'] # ADDED sub_county, location
+    list_filter = ['county', 'sub_county', 'created_at'] # ADDED sub_county
     search_fields = ['user__first_name', 'user__last_name', 'id_number', 'phone_number']
     readonly_fields = ['created_at', 'updated_at']
     
@@ -19,7 +19,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('id_number', 'phone_number', 'date_of_birth')
         }),
         ('Location', {
-            'fields': ('county', 'sub_county', 'ward', 'village')
+            'fields': ('county', 'sub_county', 'ward', 'location', 'sub_location', 'village') # ADDED location, sub_location
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -29,6 +29,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 class DocumentInline(admin.TabularInline):
+# ... (DocumentInline remains the same)
     """Inline admin for documents"""
     model = Document
     extra = 1
@@ -44,11 +45,12 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'status', 'education_level', 'family_status',
-        'previous_bursary_recipient', 'submitted_at'
+        'previous_bursary_recipient', 'submitted_at', 'is_orphan', # ADDED is_orphan
+        'has_disability', # ADDED has_disability
     ]
     search_fields = [
         'application_number', 'student_name', 'institution_name',
-        'user_profile__user__email', 'admission_number'
+        'user_profile__user__email', 'admission_number', 'parent_guardian_name'
     ]
     readonly_fields = [
         'application_number', 'submitted_at', 'created_at', 'updated_at'
@@ -65,8 +67,15 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
         ('Student Information', {
             'fields': (
                 'student_name', 'institution_name', 'admission_number',
-                'education_level', 'course_program', 'year_of_study'
+                'education_level', 'course_program', 'year_of_study',
+                'inst_county', 'inst_contact', # ADDED inst fields
             )
+        }),
+        ('School Performance', { # NEW FIELDSET
+            'fields': ('term1_score', 'term2_score', 'term3_score')
+        }),
+        ('Disability Status', { # NEW FIELDSET
+            'fields': ('has_disability', 'disability_nature', 'disability_reg_no', 'is_orphan')
         }),
         ('Financial Information', {
             'fields': (
@@ -75,18 +84,35 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
         }),
         ('Family Information', {
             'fields': (
-                'family_status', 'number_of_siblings', 'siblings_in_school'
+                'family_status', 'number_of_siblings', 'siblings_in_school',
+                'father_name', 'mother_name', 'father_occupation', 'mother_occupation',
+                'is_single_parent', # ADDED is_single_parent
             )
         }),
         ('Parent/Guardian Information', {
             'fields': (
-                'parent_guardian_name', 'parent_guardian_phone',
-                'parent_guardian_occupation'
+                'parent_guardian_name', 'guardian_relation', 'parent_guardian_phone',
+                'parent_guardian_occupation', 'parent_id_number'
+            )
+        }),
+        ('Financial Support & Bursary History', { # NEW FIELDSET
+            'fields': (
+                'fees_provider', 'other_fees_provider', 'previous_bursary_recipient',
+                'cdf_amount', 'ministry_amount', 'county_gov_amount', 'other_bursary_amount'
             )
         }),
         ('Additional Information', {
             'fields': (
-                'reason_for_application', 'previous_bursary_recipient'
+                'reason_for_application',
+            )
+        }),
+        ('Declaration & Chief Verification', { # NEW FIELDSET
+            'fields': (
+                ('student_signature_name', 'student_declaration_date'),
+                ('parent_signature_name', 'parent_declaration_date'),
+                'chief_full_name', 'chief_sub_location', 'chief_county',
+                'chief_sub_county', 'chief_location', 'chief_comments',
+                'chief_signature_name', 'chief_date'
             )
         }),
         ('Review', {
@@ -99,6 +125,7 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
     )
     
     def status_badge(self, obj):
+# ... (status_badge method remains the same)
         """Display status with color coding"""
         colors = {
             'pending': '#FFA500',
@@ -115,6 +142,7 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
     status_badge.short_description = 'Status'
     
     def approve_applications(self, request, queryset):
+# ... (approve_applications method remains the same)
         """Bulk approve applications"""
         from django.utils import timezone
         updated = queryset.update(
@@ -125,6 +153,7 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
     approve_applications.short_description = 'Approve selected applications'
     
     def reject_applications(self, request, queryset):
+# ... (reject_applications method remains the same)
         """Bulk reject applications"""
         from django.utils import timezone
         updated = queryset.update(
@@ -135,6 +164,7 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
     reject_applications.short_description = 'Reject selected applications'
     
     def mark_under_review(self, request, queryset):
+# ... (mark_under_review method remains the same)
         """Mark applications as under review"""
         updated = queryset.update(status='under_review')
         self.message_user(request, f'{updated} application(s) marked as under review.')
@@ -143,6 +173,7 @@ class BursaryApplicationAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
+# ... (DocumentAdmin remains the same)
     """Admin interface for Documents"""
     list_display = [
         'application', 'document_type', 'description',
