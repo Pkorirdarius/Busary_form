@@ -134,6 +134,7 @@ class BursaryUpdateView(LoginRequiredMixin, UpdateView):
             context['document_formset'] = DocumentFormSet(instance=self.object)
         
         context['is_update'] = True
+        context['application_form'] = context.get('form')
         return context
 
     def form_valid(self, form):
@@ -260,4 +261,4 @@ def bursary_application_view(request):
         'profile_form': profile_form,
         'document_formset': document_formset,
     }
-    return render(request, 'applications/bursary_form.html', context)
+    return render(request, 'applications/busary_form.html', context)

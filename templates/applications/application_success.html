@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Application Submitted Successfully{% endblock %}
+{% block content %}
+
+<style>
+  .success-container {
+    max-width: 700px;
+    margin: 50px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #006400, #004080);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 40px;
+  }
+  .success-title {
+    color: #006400;
+    font-size: 2em;
+    margin-bottom: 15px;
+  }
+  .success-message {
+    color: #666;
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  .info-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border-left: 4px solid #006400;
+  }
+  .info-box h3 {
+    color: #333;
+    margin-bottom: 10px;
+  }
+  .info-box p {
+    color: #666;
+    margin: 5px 0;
+  }
+  .action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 12px 30px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    transition: all 0.3s ease;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #006400, #004080);
+    color: white;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,100,0,0.3);
+  }
+  .btn-secondary {
+    background: white;
+    color: #006400;
+    border: 2px solid #006400;
+  }
+  .btn-secondary:hover {
+    background: #f8f9fa;
+  }
+  .timeline {
+    text-align: left;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f0f8ff;
+    border-radius: 10px;
+  }
+  .timeline h3 {
+    color: #004080;
+    margin-bottom: 15px;
+  }
+  .timeline-item {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+    align-items: center;
+  }
+  .timeline-number {
+    min-width: 30px;
+    height: 30px;
+    background: #006400;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  .timeline-text {
+    color: #666;
+  }
+</style>
+
+<div class="success-container">
+  <div class="success-icon">✓</div>
+  
+  <h1 class="success-title">Application Submitted Successfully!</h1>
+  
+  <p class="success-message">
+    Thank you for submitting your bursary application to West Pokot County. 
+    Your application has been received and is being processed.
+  </p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="info-box">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="info-box">
+    <h3>📋 What Happens Next?</h3>
+    <p><strong>Application Reference:</strong> Check your email for your application number</p>
+    <p><strong>Processing Time:</strong> 2-4 weeks</p>
+    <p><strong>Notification:</strong> You will be notified via SMS and email</p>
+  </div>
+
+  <div class="timeline">
+    <h3>Application Process Timeline</h3>
+    <div class="timeline-item">
+      <div class="timeline-number">1</div>
+      <div class="timeline-text">Application submitted and received</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-number">2</div>
+      <div class="timeline-text">Document verification by area chief</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-number">3</div>
+      <div class="timeline-text">Review by bursary committee</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-number">4</div>
+      <div class="timeline-text">Approval and disbursement</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <h3>📞 Need Help?</h3>
+    <p><strong>Email:</strong> bursary@westpokot.go.ke</p>
+    <p><strong>Phone:</strong> +254 XXX XXX XXX</p>
+    <p><strong>Office:</strong> West Pokot County Bursary Office</p>
+  </div>
+
+  <div class="action-buttons">
+    <a href="{% url 'home' %}" class="btn btn-primary">Submit Another Application</a>
+    <a href="{% url 'application_list' %}" class="btn btn-secondary">View My Applications</a>
+  </div>
+
+  <p style="margin-top: 30px; color: #999; font-size: 0.9em;">
+    Keep your application number safe for future reference.
+  </p>
+</div>
+
+{% endblock %}
