@@ -94,3 +94,26 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:#006400; 
     .form-row { grid-template-columns:1fr; } 
     .floating-help { bottom:20px; right:20px; width:50px; height:50px; } 
 }
+/* Media Query for Tablets and Smaller (e.g., Max Width 768px) */
+@media screen and (max-width: 768px) {
+    .form-wrapper {
+        padding: 0; /* Remove side padding on wrapper */
+        border-radius: 0;
+    }
+    
+    /* Force multi-column rows into single column */
+    .form-row {
+        flex-direction: column; /* Stacks items vertically */
+    }
+
+    .form-row > .form-group {
+        width: 100%; /* Makes each form group take full width */
+        margin-right: 0;
+        margin-bottom: 15px; /* Adds space between stacked groups */
+    }
+
+    .progress-steps .step {
+        font-size: 0.8em; /* Reduces font size for steps */
+        padding: 5px;
+    }
+}

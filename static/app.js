@@ -1,88 +1,105 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const form = document.getElementById('bursaryForm');
-  const sections = form.querySelectorAll('.form-section');
-  const progressFill = document.getElementById('progressFill');
-  const steps = document.querySelectorAll('.progress-steps .step');
+const form = document.getElementById('bursaryForm');
+const sections = form.querySelectorAll('.form-section');
+const progressFill = document.getElementById('progressFill');
+const steps = document.querySelectorAll('.progress-steps .step');
+// Conditional fields
+const orphanNote = document.getElementById('orphanNote');
+const disabilityDetails = document.getElementById('disabilityDetails');
+const previousBursaryDetails = document.getElementById('previousBursaryDetails');
+const previousBursaryDetailsContinued = document.getElementById('previousBursaryDetailsContinued');
+const providerNote = document.getElementById('providerNote');
+// Initial hide
+orphanNote.style.display = 'none';
+disabilityDetails.style.display = 'none';
+previousBursaryDetails.style.display = 'none';
+previousBursaryDetailsContinued.style.display = 'none';
+providerNote.style.display = 'none';
+// Set defaults
+// FIX 1: Change 'No' to 'False' for initial defaults
+document.querySelector('input[name="orphan"][value="False"]').checked = true;
+document.querySelector('input[name="disability"][value="False"]').checked = true;
+document.querySelector('input[name="previousBursary"][value="False"]').checked = true;
+document.querySelector('input[name="singleParent"][value="False"]').checked = true;
 
-  // Conditional fields
-  const orphanNote = document.getElementById('orphanNote');
-  const disabilityDetails = document.getElementById('disabilityDetails');
-  const previousBursaryDetails = document.getElementById('previousBursaryDetails');
-  const previousBursaryDetailsContinued = document.getElementById('previousBursaryDetailsContinued');
-  const providerNote = document.getElementById('providerNote');
+// Show/hide conditional fields based on radio selections
+// Show/hide conditional fields based on radio selections
 
-  // Initial hide
-  orphanNote.style.display = 'none';
-  disabilityDetails.style.display = 'none';
-  previousBursaryDetails.style.display = 'none';
-  previousBursaryDetailsContinued.style.display = 'none';
-  providerNote.style.display = 'none';
+// Central function to handle all conditional field visibility
+function handleConditionalFields() {
+  // 1. Get current states (using element checks for 'True' value)
+  const isOrphan = document.querySelector('input[name="orphan"][value="True"]:checked');
+  const hasDisability = document.querySelector('input[name="disability"][value="True"]:checked');
+  const previousBursary = document.querySelector('input[name="previousBursary"][value="True"]:checked');
+  const bothParentsAlive = document.querySelector('input[name="bothParentsAlive"][value="True"]:checked');
+  const singleParent = document.querySelector('input[name="singleParent"][value="True"]:checked');
+  // 2. Set visibility for Orphan fields
+  // Use classList for visibility (cleaner than style.display)
+  const showHide = (el, show) => {
+    if (el) {
+      el.classList.toggle('show', show);
+      el.querySelectorAll('input, select, textarea').forEach(field => {
+      // Optional: you can enable/disable required attributes here for stricter validation
+      });
+    }
+  };
+  // 1. Orphan
+  showHide(orphanNote, isOrphan);
+  // 2. Provider Note: Required if (Orphan=True) OR (BothParentsAlive=False) OR (SingleParent=True)
+  const needsProviderNote = isOrphan || !bothParentsAlive || singleParent;
+  showHide(providerNote, needsProviderNote);
+  // 3. Disability
+  showHide(disabilityDetails, hasDisability);
+  // 4. Previous Bursary
+  showHide(previousBursaryDetails, previousBursary);
+  showHide(previousBursaryDetailsContinued, previousBursary);
+}
+// FIX: Ensure the event listener correctly calls the function
+form.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', handleConditionalFields);
+});
 
-  // Set defaults
-  document.querySelector('input[name="orphan"][value="No"]').checked = true;
-  document.querySelector('input[name="disability"][value="No"]').checked = true;
-  document.querySelector('input[name="previousBursary"][value="No"]').checked = true;
-  document.querySelector('input[name="singleParent"][value="No"]').checked = true;
 
-  // Show/hide conditional fields based on radio selections
-  form.querySelectorAll('input[type="radio"]').forEach(radio => {
-    radio.addEventListener('change', function () {
-      const name = this.name;
-      if (name === 'orphan') {
-        orphanNote.style.display = this.value === 'Yes' ? 'block' : 'none';
-        providerNote.style.display = this.value === 'Yes' ? 'block' : 'none';
-      } else if (name === 'disability') {
-        disabilityDetails.style.display = this.value === 'Yes' ? 'block' : 'none';
-      } else if (name === 'previousBursary') {
-        previousBursaryDetails.style.display = this.value === 'Yes' ? 'block' : 'none';
-        previousBursaryDetailsContinued.style.display = this.value === 'Yes' ? 'block' : 'none';
-      } else if (name === 'bothParentsAlive') {
-        // Optional: additional trigger for providerNote if both parents not alive
-        if (this.value === 'No') {
-          providerNote.style.display = 'block';
-        } else {
-          // Only hide if orphan is also No
-          if (document.querySelector('input[name="orphan"]:checked').value === 'No') {
-            providerNote.style.display = 'none';
-          }
-        }
-      }
-    });
+// A. Initial Call: Run once on page load to set the initial state (based on defaults or pre-filled data)
+handleConditionalFields();
+// B. Event Listener: Run whenever any radio button is changed
+form.querySelectorAll('input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', handleConditionalFields);
+});
+
+// Navigation
+// ---------- Navigation ----------
+document.getElementById('toStep2').addEventListener('click', () => goToStep(2));
+document.getElementById('backTo1').addEventListener('click', () => goToStep(1));
+document.getElementById('toStep3').addEventListener('click', () => goToStep(3));
+document.getElementById('backTo2').addEventListener('click', () => goToStep(2));
+document.getElementById('toStep4').addEventListener('click', () => goToStep(4));
+document.getElementById('backTo3').addEventListener('click', () => goToStep(3));
+document.getElementById('toStep5').addEventListener('click', () => goToStep(5));
+document.getElementById('backTo4').addEventListener('click', () => goToStep(4));
+
+
+// ---------- UI state ----------
+let currentStep = 1;
+const totalSteps = sections.length;
+
+// progress elements
+function updateProgress() {
+  const pct = Math.round((currentStep - 1) / (totalSteps - 1) * 100);
+  progressFill.style.width = pct + '%';
+
+  steps.forEach((st, i) => {
+    st.classList.toggle('active', i + 1 === currentStep);
   });
-
-  // Navigation
-  // ---------- Navigation ----------
-  document.getElementById('toStep2').addEventListener('click', () => goToStep(2));
-  document.getElementById('backTo1').addEventListener('click', () => goToStep(1));
-  document.getElementById('toStep3').addEventListener('click', () => goToStep(3));
-  document.getElementById('backTo2').addEventListener('click', () => goToStep(2));
-  document.getElementById('toStep4').addEventListener('click', () => goToStep(4));
-  document.getElementById('backTo3').addEventListener('click', () => goToStep(3));
-  document.getElementById('toStep5').addEventListener('click', () => goToStep(5));
-  document.getElementById('backTo4').addEventListener('click', () => goToStep(4));
-
-
-  // ---------- UI state ----------
-  let currentStep = 1;
-  const totalSteps = sections.length;
-
-  // progress elements
-  function updateProgress() {
-    const pct = Math.round((currentStep - 1) / (totalSteps - 1) * 100);
-    progressFill.style.width = pct + '%';
-
-    steps.forEach((st, i) => {
-      st.classList.toggle('active', i + 1 === currentStep);
-    });
-    sections.forEach(s => {
-      const step = parseInt(s.dataset.step,10);
-      s.classList.toggle('active', step === currentStep);
-      s.classList.toggle('completed', step < currentStep);
-      const sn = s.querySelector('.section-number');
-      if (sn) sn.classList.toggle('active', step === currentStep);
-    });
-  }
-  updateProgress();
+  sections.forEach(s => {
+    const step = parseInt(s.dataset.step,10);
+    s.classList.toggle('active', step === currentStep);
+    s.classList.toggle('completed', step < currentStep);
+    const sn = s.querySelector('.section-number');
+    if (sn) sn.classList.toggle('active', step === currentStep);
+  });
+}
+updateProgress();
 
   // ---------- Navigation buttons ----------
   function goToStep(n){
