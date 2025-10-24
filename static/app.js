@@ -147,6 +147,32 @@ document.addEventListener('DOMContentLoaded', function () {
         return false;
       }
     }
+    // 2. NEW LOGIC: Validate radio button groups marked as required
+    const radioGroups = sec.querySelectorAll('.form-group .radio-group');
+    for (let groupDiv of radioGroups) {
+      // Check if the closest label is marked as required (based on busary_form.html structure)
+      const labelEl = groupDiv.closest('.form-group')?.querySelector('label.required');
+
+      if (labelEl) {
+        const groupName = groupDiv.querySelector('input[type="radio"]')?.name;
+        // Only check if a group name exists and the group is visible
+        if (groupName && groupDiv.offsetParent !== null) {
+          const checked = sec.querySelector(`input[name="${groupName}"]:checked`);
+          // Clean the label text for the error message
+          const groupLabel = labelEl.textContent.replace('*', '').trim();
+          
+          if (!checked) {
+            showError(`Please select an option for: ${groupLabel}.`);
+            groupDiv.closest('.form-group').classList.add('has-error');
+            // Scroll to the error
+            groupDiv.closest('.form-group').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+          } else {
+            groupDiv.closest('.form-group').classList.remove('has-error');
+          }
+        }
+      }
+    }
     clearMessages();
     return true;
   }
