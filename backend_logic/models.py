@@ -240,6 +240,24 @@ class BursaryApplication(models.Model):
             ("reject_application", "Can reject bursary applications"),
             ("view_analytics", "Can view application analytics"),
         ]
+class ApplicationStatusLog(models.Model):
+    """Audit log for application status changes."""
+    application = models.ForeignKey(
+        BursaryApplication,
+        on_delete=models.CASCADE,
+        related_name='status_logs'
+    )
+    old_status = models.CharField(max_length=50)
+    new_status = models.CharField(max_length=50)
+    comments = models.TextField(blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Status change for {self.application.application_number}: {self.old_status} -> {self.new_status}"
+
+    class Meta:
+        verbose_name = "Application Status Log"
+        verbose_name_plural = "Application Status Logs"
 
 
 class Document(models.Model):

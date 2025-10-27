@@ -6,6 +6,7 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
+from django.views.generic import ListView
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,15 @@ from .models import BursaryApplication, UserProfile, Document
 # UserProfileForm removed from imports as it is no longer used
 from .forms import MultiStepBursaryApplicationForm, DocumentFormSet, DocumentUploadForm 
 
+class ApplicationListView(LoginRequiredMixin, ListView):
+    model = BursaryApplication
+    template_name = 'applications/application_list.html'
+    context_object_name = 'applications'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return BursaryApplication.objects.select_related('user').all().order_by('-created_at')
+    
 def bursary_apply(request):
     """
     Function-Based View to handle the multi-step bursary application form, 

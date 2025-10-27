@@ -49,33 +49,33 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class ApplicationStatusLog(models.Model):
-    """
-    Model to track all status changes for analytics and audit purposes
-    """
-    application = models.ForeignKey(
-        BursaryApplication,
-        on_delete=models.CASCADE,
-        related_name='status_logs'
-    )
-    old_status = models.CharField(max_length=20, blank=True)
-    new_status = models.CharField(max_length=20)
-    changed_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-    comments = models.TextField(blank=True)
-    changed_at = models.DateTimeField(auto_now_add=True)
+# class ApplicationStatusLog(models.Model):
+#     """
+#     Model to track all status changes for analytics and audit purposes
+#     """
+#     application = models.ForeignKey(
+#         BursaryApplication,
+#         on_delete=models.CASCADE,
+#         related_name='status_logs'
+#     )
+#     old_status = models.CharField(max_length=20, blank=True)
+#     new_status = models.CharField(max_length=20)
+#     changed_by = models.ForeignKey(
+#         User,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True
+#     )
+#     comments = models.TextField(blank=True)
+#     changed_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        verbose_name = "Application Status Log"
-        verbose_name_plural = "Application Status Logs"
-        ordering = ['-changed_at']
+#     class Meta:
+#         verbose_name = "Application Status Log"
+#         verbose_name_plural = "Application Status Logs"
+#         ordering = ['-changed_at']
 
-    def __str__(self):
-        return f"{self.application.application_number}: {self.old_status} → {self.new_status}"
+#     def __str__(self):
+#         return f"{self.application.application_number}: {self.old_status} → {self.new_status}"
 
 
 @receiver(pre_save, sender=BursaryApplication)
