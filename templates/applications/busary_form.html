@@ -176,14 +176,16 @@
           </div>
         </div>
 
-        <div class="form-row conditional" id="disabilityDetails">
-          <div class="form-group">
-            <label>{{ form.disabilityNature.label }}</label>
-            {{ form.disabilityNature }}
-          </div>
-          <div class="form-group">
-            <label>{{ form.disabilityRegNo.label }}</label>
-            {{ form.disabilityRegNo }}
+        <div class="conditional" id="disabilityDetails">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ form.disabilityNature.label }}</label>
+              {{ form.disabilityNature }}
+            </div>
+            <div class="form-group">
+              <label>{{ form.disabilityRegNo.label }}</label>
+              {{ form.disabilityRegNo }}
+            </div>
           </div>
         </div>
 
@@ -401,14 +403,16 @@
           </div>
         </div>
 
-        <div class="form-row single conditional" id="providerNote">
-          <div class="form-group">
-            <label>{{ form.feesProvider.label }}</label>
-            {{ form.feesProvider }}
-          </div>
-          <div class="form-group">
-            <label>{{ form.otherProvider.label }}</label>
-            {{ form.otherProvider }}
+        <div class="conditional" id="providerNote">
+          <div class="form-row single">
+            <div class="form-group">
+              <label>{{ form.feesProvider.label }}</label>
+              {{ form.feesProvider }}
+            </div>
+            <div class="form-group">
+              <label>{{ form.otherProvider.label }}</label>
+              {{ form.otherProvider }}
+            </div>
           </div>
         </div>
 

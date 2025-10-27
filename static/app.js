@@ -9,21 +9,16 @@ const disabilityDetails = document.getElementById('disabilityDetails');
 const previousBursaryDetails = document.getElementById('previousBursaryDetails');
 const previousBursaryDetailsContinued = document.getElementById('previousBursaryDetailsContinued');
 const providerNote = document.getElementById('providerNote');
-// Initial hide
-orphanNote.style.display = 'none';
-disabilityDetails.style.display = 'none';
-previousBursaryDetails.style.display = 'none';
-previousBursaryDetailsContinued.style.display = 'none';
-providerNote.style.display = 'none';
+
+// NOTE: The conflicting initial inline styles (e.g., orphanNote.style.display = 'none';) 
+// have been REMOVED. The field hiding is now handled entirely by the .conditional class in style.css.
+
 // Set defaults
 // FIX 1: Change 'No' to 'False' for initial defaults
 document.querySelector('input[name="orphan"][value="False"]').checked = true;
 document.querySelector('input[name="disability"][value="False"]').checked = true;
 document.querySelector('input[name="previousBursary"][value="False"]').checked = true;
 document.querySelector('input[name="singleParent"][value="False"]').checked = true;
-
-// Show/hide conditional fields based on radio selections
-// Show/hide conditional fields based on radio selections
 
 // Central function to handle all conditional field visibility
 function handleConditionalFields() {
@@ -33,16 +28,30 @@ function handleConditionalFields() {
   const previousBursary = document.querySelector('input[name="previousBursary"][value="True"]:checked');
   const bothParentsAlive = document.querySelector('input[name="bothParentsAlive"][value="True"]:checked');
   const singleParent = document.querySelector('input[name="singleParent"][value="True"]:checked');
-  // 2. Set visibility for Orphan fields
-  // Use classList for visibility (cleaner than style.display)
+  
+  // 2. Set visibility for conditional fields
   const showHide = (el, show) => {
     if (el) {
       el.classList.toggle('show', show);
+      
+      // FIX 1: Implement required attribute management
       el.querySelectorAll('input, select, textarea').forEach(field => {
-      // Optional: you can enable/disable required attributes here for stricter validation
+        // 1. Use a data attribute to store the *original* required state (only on first run)
+        if (field.dataset.originalRequired === undefined) {
+          field.dataset.originalRequired = field.hasAttribute('required') ? 'true' : 'false';
+        }
+        
+        // 2. Set 'required' only if 'show' is true AND the field was originally required
+        if (show && field.dataset.originalRequired === 'true') {
+          field.setAttribute('required', 'required');
+        } else {
+          // Remove required attribute when hidden or if it wasn't originally required
+          field.removeAttribute('required');
+        }
       });
     }
   };
+  
   // 1. Orphan
   showHide(orphanNote, isOrphan);
   // 2. Provider Note: Required if (Orphan=True) OR (BothParentsAlive=False) OR (SingleParent=True)
@@ -54,15 +63,11 @@ function handleConditionalFields() {
   showHide(previousBursaryDetails, previousBursary);
   showHide(previousBursaryDetailsContinued, previousBursary);
 }
-// FIX: Ensure the event listener correctly calls the function
-form.querySelectorAll('input[type="radio"]').forEach(radio => {
-  radio.addEventListener('change', handleConditionalFields);
-});
-
 
 // A. Initial Call: Run once on page load to set the initial state (based on defaults or pre-filled data)
 handleConditionalFields();
 // B. Event Listener: Run whenever any radio button is changed
+// FIX 2: Removed the redundant event listener block that was previously placed above this line.
 form.querySelectorAll('input[type="radio"]').forEach(radio => {
   radio.addEventListener('change', handleConditionalFields);
 });
@@ -195,112 +200,40 @@ updateProgress();
   }
 
   // ---------- Submit handler ----------
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!validateStep(currentStep)) return;
-    // final validation across all steps: ensure step 1-5 required fields present
-    for (let s=1; s<=totalSteps; s++) {
-      if (!validateStep(s)) {
-        goToStep(s);
+  form.addEventListener('submit', (e) => {
+    // 1. Final validation across all steps: ensure step 1-5 required fields present
+    
+    // Check current step first (optional, but good for immediate feedback)
+    if (!validateStep(currentStep)) {
+        e.preventDefault(); // Prevent native submit if current step fails
         return;
-      }
     }
-
-    // build payload (for local use or logging, since no send)
-    const payload = {
-      timestamp: new Date().toISOString(),
-      fullName: document.getElementById('fullName').value.trim(),
-      idNumber: document.getElementById('idNumber').value.trim(),
-      dob: document.getElementById('dob').value,
-      gender: document.getElementById('gender').value,
-      county: document.getElementById('county').value.trim(),
-      subCounty: document.getElementById('subCounty').value.trim(),
-      ward: document.getElementById('ward').value.trim(),
-      location: document.getElementById('location').value.trim(),
-      subLocation: document.getElementById('subLocation').value.trim(),
-      village: document.getElementById('village').value.trim(),
-      chiefName: document.getElementById('chiefName').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      orphan: document.querySelector('input[name="orphan"]:checked')?.value || '',
-      disability: document.querySelector('input[name="disability"]:checked')?.value || '',
-      disabilityNature: document.getElementById('disabilityNature').value.trim(),
-      disabilityRegNo: document.getElementById('disabilityRegNo').value.trim(),
-      previousBursary: document.querySelector('input[name="previousBursary"]:checked')?.value || '',
-      cdfAmount: document.getElementById('cdfAmount').value.trim(),
-      ministryAmount: document.getElementById('ministryAmount').value.trim(),
-      countyGovAmount: document.getElementById('countyGovAmount').value.trim(),
-      otherBursary: document.getElementById('otherBursary').value.trim(),
-      institution: document.getElementById('institution').value.trim(),
-      level: document.getElementById('level').value,
-      course: document.getElementById('course').value.trim(),
-      yearForm: document.getElementById('yearForm').value.trim(),
-      instCounty: document.getElementById('instCounty').value.trim(),
-      instContact: document.getElementById('instContact').value.trim(),
-      term1: document.getElementById('term1').value.trim(),
-      term2: document.getElementById('term2').value.trim(),
-      term3: document.getElementById('term3').value.trim(),
-      fatherName: document.getElementById('fatherName').value.trim(),
-      motherName: document.getElementById('motherName').value.trim(),
-      guardianName: document.getElementById('guardianName').value.trim(),
-      relation: document.getElementById('relation').value.trim(),
-      fatherOccupation: document.getElementById('fatherOccupation').value.trim(),
-      motherOccupation: document.getElementById('motherOccupation').value.trim(),
-      parentPhone: document.getElementById('parentPhone').value.trim(),
-      parentId: document.getElementById('parentId').value.trim(),
-      bothParentsAlive: document.querySelector('input[name="bothParentsAlive"]:checked')?.value || '',
-      singleParent: document.querySelector('input[name="singleParent"]:checked')?.value || '',
-      feesProvider: document.getElementById('feesProvider').value,
-      otherProvider: document.getElementById('otherProvider').value.trim(),
-      signature: document.getElementById('signature').value.trim(),
-      studentDate: document.getElementById('studentDate').value,
-      parentSignature: document.getElementById('parentSignature').value.trim(),
-      parentDate: document.getElementById('parentDate').value,
-      chiefFullName: document.getElementById('chiefFullName').value.trim(),
-      chiefSubLocation: document.getElementById('chiefSubLocation').value.trim(),
-      chiefCounty: document.getElementById('chiefCounty').value.trim(),
-      chiefSubCounty: document.getElementById('chiefSubCounty').value.trim(),
-      chiefLocation: document.getElementById('chiefLocation').value.trim(),
-      chiefComments: document.getElementById('chiefComments').value.trim(),
-      chiefSignature: document.getElementById('chiefSignature').value.trim(),
-      chiefDate: document.getElementById('chiefDate').value,
-      rubberStamp: document.getElementById('rubberStamp').value.trim(),
-      notes: document.getElementById('notes').value.trim(),
-      files: {}
-    };
-
-    // convert files to base64 (optional, since no send, but keep for completeness)
-    const fileIds = ['idFile', 'reportForm', 'parentIdFile', 'studentIdFile', 'instIdFile', 'instLetter', 'guardianFile', 'passportPhoto'];
-    for (let id of fileIds) {
-      const el = document.getElementById(id);
-      if (el && el.files[0]) {
-        const f = el.files[0];
-        payload.files[id] = {name: f.name, type: f.type, b64: await fileToBase64(f)};
-      }
+    
+    // Check all steps before final submission
+    for (let s = 1; s <= totalSteps; s++) {
+        if (!validateStep(s)) {
+            // If validation fails on any step, stop the native submission
+            e.preventDefault(); 
+            
+            // Navigate the user back to the first step with an error
+            goToStep(s);
+            
+            showError('Please correct the highlighted errors before submitting.');
+            
+            // Re-enable button after showing error
+            document.getElementById('submitBtn').disabled = false;
+            return;
+        }
     }
-
-    // disable submit while "sending"
+    
+    // 2. Allow Native Submission if All Validation Passes
+    
+    // Disable the button to prevent double-submission
     document.getElementById('submitBtn').disabled = true;
-    showProgressMessage('Submitting application...');
-    try {
-      // Simulate submission success without sending to any URL
-      // You can console.log(payload) for debugging if needed
-      console.log('Form payload:', payload);
-      showSuccess('Application submitted successfully.');
-      form.reset();
-      // clear previews
-      const previewIds = ['idFilePreview', 'reportFormPreview', 'parentIdFilePreview', 'studentIdFilePreview', 'instIdFilePreview', 'instLetterPreview', 'guardianFilePreview', 'passportPhotoPreview'];
-      previewIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = '';
-      });
-      goToStep(1);
-    } catch (err) {
-      console.error(err);
-      showError('Submission failed: ' + (err.message || 'error'));
-    } finally {
-      document.getElementById('submitBtn').disabled = false;
-    }
+    
+    // FIX 3 (Option 2): Removed the client-side progress message to rely on server response.
+    
+    // DO NOT CALL e.preventDefault() HERE. The form will submit naturally.
   });
 
   // ---------- Messages ----------
@@ -309,7 +242,7 @@ updateProgress();
   function showSuccess(text) { successMsg.innerText = text; successMsg.style.display='block'; errorMsg.style.display='none'; }
   function showError(text) { errorMsg.innerText = text; errorMsg.style.display='block'; successMsg.style.display='none'; }
   function clearMessages() { errorMsg.style.display='none'; successMsg.style.display='none'; }
-  function showProgressMessage(text) { successMsg.style.display='block'; successMsg.innerText = text; errorMsg.style.display='none'; }
+  // showProgressMessage function removed as requested.
 
   // help button
   document.getElementById('helpBtn').addEventListener('click', ()=> {
