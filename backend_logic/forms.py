@@ -464,6 +464,27 @@ class MultiStepBursaryApplicationForm(forms.Form):
     term2 = forms.CharField(max_length=50, required=False, label="Term 2 Score/Grade") # Maps to term2_score
     term3 = forms.CharField(max_length=50, required=False, label="Term 3 Score/Grade") # Maps to term3_score
     
+    annual_family_income = forms.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        min_value=0,
+        label="Annual Family Income (KES)",
+        help_text="Enter the total annual income of your family"
+    )
+    tuition_fee = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        min_value=0.01,
+        label="Total Tuition Fee (KES)",
+        help_text="Enter the full tuition fee for the academic year"
+    )
+    amount_requested = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        min_value=0.01,
+        label="Amount Requested (KES)",
+        help_text="Enter the bursary amount you are requesting"
+    )
     # STEP 3: FAMILY
     fatherName = forms.CharField(max_length=200, required=False, label="Father's Full Name") # Maps to father_name (NEW)
     motherName = forms.CharField(max_length=200, required=False, label="Mother's Full Name") # Maps to mother_name (NEW)

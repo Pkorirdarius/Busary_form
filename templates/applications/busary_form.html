@@ -310,7 +310,69 @@
             {{ form.term3 }}
           </div>
         </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label style="margin-top: 20px; font-weight: bold; color: #006400;">Financial Information</label>
+            <p style="font-size: 0.9em; color: #666;">Provide accurate financial details for bursary assessment</p>
+          </div>
+        </div>
 
+        <div class="form-row">
+          <div class="form-group">
+            <label class="required">Annual Family Income (KES)</label>
+            <input type="number" 
+                   id="annual_family_income" 
+                   name="annual_family_income" 
+                   step="0.01" 
+                   min="0" 
+                   required 
+                   placeholder="e.g., 120000.00"
+                   title="Enter your family's total annual income in Kenya Shillings">
+            <small style="color: #666;">Total yearly income from all family sources</small>
+          </div>
+          <div class="form-group">
+            <label class="required">Total Tuition Fee (KES)</label>
+            <input type="number" 
+                   id="tuition_fee" 
+                   name="tuition_fee" 
+                   step="0.01" 
+                   min="0.01" 
+                   required 
+                   placeholder="e.g., 45000.00"
+                   title="Enter the full tuition fee for the academic year">
+            <small style="color: #666;">Full fee for the academic year</small>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="required">Amount Requested (KES)</label>
+            <input type="number" 
+                   id="amount_requested" 
+                   name="amount_requested" 
+                   step="0.01" 
+                   min="0.01" 
+                   required 
+                   placeholder="e.g., 30000.00"
+                   title="Enter the bursary amount you are requesting">
+            <small style="color: #666;">Cannot exceed tuition fee amount</small>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="required">Reason for Application</label>
+            <textarea id="reason_for_application" 
+                      name="reason_for_application" 
+                      rows="5" 
+                      required 
+                      maxlength="1000" 
+                      minlength="50"
+                      placeholder="Explain in detail why you need this bursary. Include information about your family's financial situation, challenges faced, and how the bursary will help you continue your education. (Minimum 50 characters, maximum 1000 characters)"></textarea>
+            <small style="color: #666;">Provide detailed explanation (50-1000 characters)</small>
+          </div>
+        </div>
+        <!-- Navigation buttons -->
         <div class="navigation">
           <button type="button" class="btn btn-secondary" id="backTo1">Back</button>
           <button type="button" class="btn btn-primary" id="toStep3">Next</button>

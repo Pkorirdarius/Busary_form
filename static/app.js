@@ -198,6 +198,79 @@ updateProgress();
     clearMessages();
     return true;
   }
+  // Add this validation function after the validateStep function in app.js
+
+function validateFinancialFields() {
+  const annualIncome = parseFloat(document.getElementById('annual_family_income')?.value || 0);
+  const tuitionFee = parseFloat(document.getElementById('tuition_fee')?.value || 0);
+  const amountRequested = parseFloat(document.getElementById('amount_requested')?.value || 0);
+  
+  // Validate tuition fee is greater than 0
+  if (tuitionFee <= 0) {
+    showError('Tuition fee must be greater than zero.');
+    document.getElementById('tuition_fee').focus();
+    return false;
+  }
+  
+  // Validate amount requested doesn't exceed tuition fee
+  if (amountRequested > tuitionFee) {
+    showError(`Amount requested (KES ${amountRequested.toLocaleString()}) cannot exceed tuition fee (KES ${tuitionFee.toLocaleString()}).`);
+    document.getElementById('amount_requested').focus();
+    return false;
+  }
+  
+  // Validate amount requested is reasonable (at least 10% of tuition)
+  if (amountRequested < tuitionFee * 0.1) {
+    if (!confirm(`Amount requested (KES ${amountRequested.toLocaleString()}) is less than 10% of tuition fee. Do you want to continue?`)) {
+      document.getElementById('amount_requested').focus();
+      return false;
+    }
+  }
+  
+  // Check if family income is very high compared to tuition
+  if (annualIncome > tuitionFee * 10) {
+    if (!confirm(`Your annual family income (KES ${annualIncome.toLocaleString()}) appears sufficient for tuition. Please ensure your reason for application clearly explains your financial need. Continue?`)) {
+      document.getElementById('reason_for_application').focus();
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+// Update the toStep3 button click handler to include financial validation
+document.getElementById('toStep3').addEventListener('click', () => {
+  if (validateStep(2) && validateFinancialFields()) {
+    goToStep(3);
+  }
+});
+
+// Add real-time validation for amount_requested
+document.getElementById('amount_requested')?.addEventListener('blur', function() {
+  const tuitionFee = parseFloat(document.getElementById('tuition_fee')?.value || 0);
+  const amountRequested = parseFloat(this.value || 0);
+  
+  if (amountRequested > tuitionFee && tuitionFee > 0) {
+    showError(`Amount requested cannot exceed tuition fee of KES ${tuitionFee.toLocaleString()}`);
+    this.value = '';
+    this.focus();
+  } else {
+    clearMessages();
+  }
+});
+
+// Update the form submission payload to include new fields
+// Add these lines to the payload object in the form submit handler:
+
+// Inside the form submit event listener, update the payload object:
+/*
+payload.annual_family_income = document.getElementById('annual_family_income').value.trim();
+payload.tuition_fee = document.getElementById('tuition_fee').value.trim();
+payload.amount_requested = document.getElementById('amount_requested').value.trim();
+payload.reason_for_application = document.getElementById('reason_for_application').value.trim();
+payload.number_of_siblings = document.getElementById('number_of_siblings')?.value.trim() || '0';
+payload.siblings_in_school = document.getElementById('siblings_in_school')?.value.trim() || '0';
+*/
 
   // ---------- Submit handler ----------
   form.addEventListener('submit', (e) => {
