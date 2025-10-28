@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models import Index
+
 
 class UserProfile(models.Model):
     """Extended user profile for bursary applicants"""
@@ -10,15 +12,15 @@ class UserProfile(models.Model):
         max_length=15,
         validators=[RegexValidator(r'^\+?1?\d{9,15}$', 'Enter a valid phone number')]
     )
-    id_number = models.CharField(max_length=20, unique=True)
+    id_number = models.CharField(max_length=20, unique=True, db_index=True)  # Added index
     date_of_birth = models.DateField()
-    county = models.CharField(max_length=100)
-    sub_county = models.CharField(max_length=100)
+    county = models.CharField(max_length=100, db_index=True)  # Added index for filtering
+    sub_county = models.CharField(max_length=100, db_index=True)  # Added index
     ward = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     location = models.CharField(max_length=100, default='', blank=True)
     sub_location = models.CharField(max_length=100, default='', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -27,10 +29,14 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name = "User Profile"
         verbose_name_plural = "User Profiles"
+        indexes = [
+            Index(fields=['county', 'sub_county'], name='idx_location'),
+            Index(fields=['id_number'], name='idx_id_number'),
+        ]
 
 
 class BursaryApplication(models.Model):
-    """Main bursary application model"""
+    """Main bursary application model with optimized indexing"""
     
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -54,22 +60,25 @@ class BursaryApplication(models.Model):
     ]
 
     # Applicant Information
-    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='applications')
-    application_number = models.CharField(max_length=20, unique=True, editable=False)
+    user_profile = models.ForeignKey(
+        UserProfile, 
+        on_delete=models.CASCADE, 
+        related_name='applications',
+        db_index=True  # Added index for joins
+    )
+    application_number = models.CharField(max_length=20, unique=True, editable=False, db_index=True)
     
     # Student Information
-    student_name = models.CharField(max_length=200)
-    institution_name = models.CharField(max_length=200)
+    student_name = models.CharField(max_length=200, db_index=True)  # Added index for search
+    institution_name = models.CharField(max_length=200, db_index=True)  # Added index
     admission_number = models.CharField(max_length=50)
-    education_level = models.CharField(max_length=20, choices=EDUCATION_LEVEL_CHOICES)
+    education_level = models.CharField(max_length=20, choices=EDUCATION_LEVEL_CHOICES, db_index=True)
     course_program = models.CharField(max_length=200)
     year_of_study = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(8)]
     )
-    # New fields from busary_form.html - STEP 2
     inst_county = models.CharField(max_length=100, default='', blank=True)
     inst_contact = models.CharField(max_length=15, default='', blank=True)
-    # School Performance
     term1_score = models.CharField(max_length=50, default='', blank=True)
     term2_score = models.CharField(max_length=50, default='', blank=True)
     term3_score = models.CharField(max_length=50, default='', blank=True)
@@ -92,7 +101,7 @@ class BursaryApplication(models.Model):
     )
     
     # Family Information
-    family_status = models.CharField(max_length=20, choices=FAMILY_STATUS_CHOICES)
+    family_status = models.CharField(max_length=20, choices=FAMILY_STATUS_CHOICES, db_index=True)
     number_of_siblings = models.IntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(20)]
     )
@@ -107,34 +116,29 @@ class BursaryApplication(models.Model):
         validators=[RegexValidator(r'^\+?1?\d{9,15}$', 'Enter a valid phone number')]
     )
     parent_guardian_occupation = models.CharField(max_length=100)
-
-    # New fields from busary_form.html - STEP 3 (Family)
     father_name = models.CharField(max_length=200, default='', blank=True)
     mother_name = models.CharField(max_length=200, default='', blank=True)
     guardian_relation = models.CharField(max_length=100, default='', blank=True)
     father_occupation = models.CharField(max_length=100, default='', blank=True)
     mother_occupation = models.CharField(max_length=100, default='', blank=True)
     parent_id_number = models.CharField(max_length=20, default='', blank=True)
-    is_single_parent = models.BooleanField(default=False)
+    is_single_parent = models.BooleanField(default=False, db_index=True)
     fees_provider = models.CharField(max_length=100, default='', blank=True)
     other_fees_provider = models.CharField(max_length=100, default='', blank=True)
 
-    # Additional Information(step 1 & 3)
+    # Additional Information
     reason_for_application = models.TextField(max_length=1000)
-    previous_bursary_recipient = models.BooleanField(default=False)
-    # Previous Bursary Amounts
+    previous_bursary_recipient = models.BooleanField(default=False, db_index=True)
     cdf_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     ministry_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     county_gov_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     other_bursary_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    # Disability
-    has_disability = models.BooleanField(default=False)
+    has_disability = models.BooleanField(default=False, db_index=True)
     disability_nature = models.CharField(max_length=255, default='', blank=True)
     disability_reg_no = models.CharField(max_length=50, default='', blank=True)
-    # Orphan status (implicitly handled by family_status='orphan' but added for clarity)
-    is_orphan = models.BooleanField(default=False) 
+    is_orphan = models.BooleanField(default=False, db_index=True)
 
-    # Declaration/Verification fields from busary_form.html - STEP 5
+    # Declaration/Verification fields
     student_signature_name = models.CharField(max_length=200, default='')
     student_declaration_date = models.DateField(default=timezone.now)
     parent_signature_name = models.CharField(max_length=200, default='')
@@ -147,18 +151,18 @@ class BursaryApplication(models.Model):
     chief_comments = models.TextField(max_length=500, default='', blank=True)
     chief_signature_name = models.CharField(max_length=200, default='', blank=True)
     chief_date = models.DateField(null=True, blank=True)
-    # Note: rubberStamp will be a document upload (or handled as an admin-only field)
 
     # Application Status and Tracking
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
         default='pending',
-        db_index=True,  # Index for faster queries
+        db_index=True,
         help_text="Current status of the bursary application"
     )
     submitted_at = models.DateTimeField(
         auto_now_add=True,
+        db_index=True,
         help_text="Timestamp when application was first submitted"
     )
     reviewed_at = models.DateTimeField(
@@ -174,7 +178,7 @@ class BursaryApplication(models.Model):
     # Metadata - Audit Trail
     created_at = models.DateTimeField(
         auto_now_add=True,
-        db_index=True,  # Index for analytics and reporting
+        db_index=True,
         help_text="Timestamp when record was created"
     )
     updated_at = models.DateTimeField(
@@ -187,20 +191,18 @@ class BursaryApplication(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.application_number:
-            # Generate unique application number
             import uuid
             self.application_number = f"BUR{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
 
     @property
     def is_editable(self):
-        """Check if application can be edited (only pending applications)"""
+        """Check if application can be edited"""
         return self.status == 'pending'
 
     @property
     def days_since_submission(self):
         """Calculate days since application was submitted"""
-        from django.utils import timezone
         if self.submitted_at:
             delta = timezone.now() - self.submitted_at
             return delta.days
@@ -228,20 +230,23 @@ class BursaryApplication(models.Model):
         verbose_name_plural = "Bursary Applications"
         ordering = ['-submitted_at']
         indexes = [
-            models.Index(fields=['-submitted_at'], name='idx_submitted_at'),
-            models.Index(fields=['status'], name='idx_status'),
-            models.Index(fields=['created_at'], name='idx_created_at'),
-            models.Index(fields=['education_level'], name='idx_edu_level'),
+            Index(fields=['-submitted_at'], name='idx_submitted_at'),
+            Index(fields=['status', '-submitted_at'], name='idx_status_submitted'),
+            Index(fields=['education_level', 'status'], name='idx_edu_status'),
+            Index(fields=['user_profile', '-created_at'], name='idx_profile_created'),
+            Index(fields=['is_orphan', 'status'], name='idx_orphan_status'),
+            Index(fields=['has_disability', 'status'], name='idx_disability_status'),
         ]
-        # Permissions for different user roles
         permissions = [
             ("review_application", "Can review bursary applications"),
             ("approve_application", "Can approve bursary applications"),
             ("reject_application", "Can reject bursary applications"),
             ("view_analytics", "Can view application analytics"),
         ]
+
+
 class ApplicationStatusLog(models.Model):
-    """Audit log for application status changes."""
+    """Audit log for application status changes"""
     application = models.ForeignKey(
         BursaryApplication,
         on_delete=models.CASCADE,
@@ -250,7 +255,7 @@ class ApplicationStatusLog(models.Model):
     old_status = models.CharField(max_length=50)
     new_status = models.CharField(max_length=50)
     comments = models.TextField(blank=True)
-    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return f"Status change for {self.application.application_number}: {self.old_status} -> {self.new_status}"
@@ -258,6 +263,10 @@ class ApplicationStatusLog(models.Model):
     class Meta:
         verbose_name = "Application Status Log"
         verbose_name_plural = "Application Status Logs"
+        ordering = ['-changed_at']
+        indexes = [
+            Index(fields=['application', '-changed_at'], name='idx_app_log'),
+        ]
 
 
 class Document(models.Model):
@@ -277,12 +286,13 @@ class Document(models.Model):
     application = models.ForeignKey(
         BursaryApplication,
         on_delete=models.CASCADE,
-        related_name='documents'
+        related_name='documents',
+        db_index=True
     )
-    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES)
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES, db_index=True)
     file = models.FileField(upload_to='bursary_documents/%Y/%m/')
     description = models.CharField(max_length=200, blank=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return f"{self.get_document_type_display()} - {self.application.application_number}"
@@ -291,3 +301,6 @@ class Document(models.Model):
         verbose_name = "Document"
         verbose_name_plural = "Documents"
         ordering = ['-uploaded_at']
+        indexes = [
+            Index(fields=['application', 'document_type'], name='idx_app_doc_type'),
+        ]
