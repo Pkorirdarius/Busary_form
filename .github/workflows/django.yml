@@ -28,10 +28,23 @@ jobs:
         python -m pip install --upgrade pip
         # Install Celery dependencies and testing dependencies
         pip install -r requirements.txt
-        pip install coverage
+        pip install coverage django-celery-results
+    - name: Prepare Test Environment
+      # If your settings.py tries to use PostgreSQL, this needs to be running.
+      # If sticking to SQLite, this ensures the environment is clean.
+      run: |
+        echo "Creating log directory needed by settings.py"
+        mkdir -p logs
+        echo "Successfully prepared environment."
     
     - name: Run Tests
       # Use coverage to run tests and generate a report
       run: |
-        coverage run manage.py test
+        echo "Starting Django tests..."
+        # The test runner will automatically use the temporary test database (SQLite by default)
+        coverage run --source='backend_logic' manage.py test backend_logic
+    
+    - name: Generate Coverage Report
+      # Separate step for coverage report ensures results are visible even if tests fail
+      run: |
         coverage report
