@@ -50,3 +50,32 @@ Traceback (most recent call last):
     raise NoReverseMatch("%s is not a registered namespace" % key)
 django.urls.exceptions.NoReverseMatch: 'djdt' is not a registered namespace
 ERROR 2025-10-28 11:12:20,095 basehttp "GET / HTTP/1.1" 500 144061
+WARNING 2025-10-29 09:38:43,449 log Not Found: /favicon.ico
+WARNING 2025-10-29 09:38:43,451 basehttp "GET /favicon.ico HTTP/1.1" 404 16527
+ERROR 2025-10-29 09:43:49,300 log Internal Server Error: /bursary/apply/
+Traceback (most recent call last):
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\ISAIAH\Desktop\bussary_form\backend_logic\views.py", line 44, in bursary_apply
+    if main_form.is_valid() and document_formset.is_valid():
+       ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\forms\forms.py", line 206, in is_valid
+    return self.is_bound and not self.errors
+                                 ^^^^^^^^^^^
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\forms\forms.py", line 201, in errors
+    self.full_clean()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\forms\forms.py", line 338, in full_clean
+    self._clean_form()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ISAIAH\Desktop\bussary_form\.venv\Lib\site-packages\django\forms\forms.py", line 354, in _clean_form
+    cleaned_data = self.clean()
+  File "C:\Users\ISAIAH\Desktop\bussary_form\backend_logic\forms.py", line 329, in clean
+    if siblings_in_school > number_of_siblings:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '>' not supported between instances of 'NoneType' and 'NoneType'
+ERROR 2025-10-29 09:43:49,452 basehttp "POST /bursary/apply/ HTTP/1.1" 500 128013
+WARNING 2025-10-29 10:52:30,819 views Form validation errors:  | Formset errors: []
+WARNING 2025-10-29 10:53:04,817 views Form validation errors:  | Formset errors: []
