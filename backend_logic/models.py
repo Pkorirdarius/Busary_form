@@ -224,6 +224,31 @@ class BursaryApplication(models.Model):
             'rejected': '#F44336',
         }
         return status_colors.get(self.status, '#999999')
+    # Verification and Flag fields (add after the status field)
+    is_verified = models.BooleanField(
+        default=False, 
+        db_index=True,
+        help_text="Has this application been verified by admin?"
+    )
+    verified_by = models.CharField(
+        max_length=150, 
+        blank=True,
+        help_text="Username of admin who verified this application"
+    )
+    verified_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Timestamp when application was verified"
+    )
+    is_flagged = models.BooleanField(
+        default=False, 
+        db_index=True,
+        help_text="Has this application been flagged for review?"
+    )
+    flag_reason = models.TextField(
+        blank=True,
+        help_text="Reason why this application was flagged"
+    )
 
     class Meta:
         verbose_name = "Bursary Application"
@@ -296,11 +321,42 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.get_document_type_display()} - {self.application.application_number}"
+    # --- ADD THESE MISSING FIELDS ---
+    is_flagged = models.BooleanField(
+        default=False, 
+        verbose_name="Flagged for Review"
+    )
+    is_verified = models.BooleanField(
+        default=False, 
+        verbose_name="Verified"
+    )
 
+    # Choices for the 'status' field
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('verified', 'Verified (Pass)'),
+        ('rejected', 'Rejected (Fail)'),
+    ]
+
+    status = models.CharField(
+        max_length=50, 
+        choices=STATUS_CHOICES, 
+        default='pending',
+        verbose_name="Verification Status"
+    )
+    # -------------------------------
+
+    application = models.ForeignKey(
+        BursaryApplication,
+        on_delete=models.CASCADE,
+        related_name='documents',
+        db_index=True
+    )
     class Meta:
         verbose_name = "Document"
         verbose_name_plural = "Documents"
         ordering = ['-uploaded_at']
         indexes = [
             Index(fields=['application', 'document_type'], name='idx_app_doc_type'),
+            Index(fields=['is_verified', 'is_flagged', 'status'], name='idx_verification'),
         ]

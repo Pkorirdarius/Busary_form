@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Flag Applications{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px;">
+    <h1 style="color: #dc3545; margin-bottom: 20px;">
+        🚩 Flag Applications for Review
+    </h1>
+    
+    <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <strong>⚠️ Warning:</strong> You are about to flag {{ applications.count }} application(s) for review.
+        Flagged applications will be marked for special attention and require additional verification.
+    </div>
+    
+    <form method="post" style="background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        {% csrf_token %}
+        
+        <h3 style="margin-bottom: 15px;">Applications to be flagged:</h3>
+        <ul style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            {% for app in applications %}
+            <li style="margin-bottom: 10px;">
+                <strong>{{ app.application_number }}</strong> - {{ app.student_name }}
+                <br>
+                <small style="color: #666;">
+                    Institution: {{ app.institution_name }} | 
+                    Amount: KES {{ app.amount_requested|floatformat:2 }}
+                </small>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="flag_reason" style="display: block; font-weight: bold; margin-bottom: 8px;">
+                Reason for Flagging: <span style="color: red;">*</span>
+            </label>
+            <textarea 
+                name="flag_reason" 
+                id="flag_reason" 
+                rows="5" 
+                required
+                placeholder="Enter the reason why these applications are being flagged (e.g., 'Inconsistent income data', 'Missing required documents', 'Duplicate submission')"
+                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;"
+            ></textarea>
+            <small style="color: #666;">This reason will be recorded and visible to other administrators.</small>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <a href="{% url 'admin:backend_logic_bursaryapplication_changelist' %}" 
+               style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Cancel
+            </a>
+            <button type="submit" name="apply" 
+                    style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                🚩 Flag Applications
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const reason = document.getElementById('flag_reason').value.trim();
+    if (!reason) {
+        e.preventDefault();
+        alert('Please provide a reason for flagging these applications.');
+        return false;
+    }
+    if (reason.length < 10) {
+        e.preventDefault();
+        alert('Please provide a more detailed reason (at least 10 characters).');
+        return false;
+    }
+    return confirm(`Are you sure you want to flag ${{'{{ applications.count }}'}} application(s)?`);
+});
+</script>
+{% endblock %}

@@ -325,6 +325,14 @@ class MultiStepBursaryApplicationForm(forms.Form):
         # Validate sibling logic
         siblings_in_school = cleaned_data.get('siblings_in_school', 0)
         number_of_siblings = cleaned_data.get('number_of_siblings', 0)
+        # Set defaults if None
+        if siblings_in_school is None:
+            cleaned_data['siblings_in_school'] = 0
+            siblings_in_school = 0
+        
+        if number_of_siblings is None:
+            cleaned_data['number_of_siblings'] = 0
+            number_of_siblings = 0
         
         if siblings_in_school > number_of_siblings:
             self.add_error('siblings_in_school', f"Siblings in school cannot exceed total siblings.")
@@ -378,6 +386,6 @@ DocumentFormSet = forms.inlineformset_factory(
     max_num=10,
     can_delete=True,
     validate_max=True,
-    min_num=1,
-    validate_min=True
+    min_num=0,
+    validate_min=False
 )
