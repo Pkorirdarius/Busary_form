@@ -79,3 +79,5 @@ TypeError: '>' not supported between instances of 'NoneType' and 'NoneType'
 ERROR 2025-10-29 09:43:49,452 basehttp "POST /bursary/apply/ HTTP/1.1" 500 128013
 WARNING 2025-10-29 10:52:30,819 views Form validation errors:  | Formset errors: []
 WARNING 2025-10-29 10:53:04,817 views Form validation errors:  | Formset errors: []
+WARNING 2025-10-29 12:15:46,105 views Form validation errors:  | Formset errors: []
+WARNING 2025-10-29 12:16:59,076 views Form validation errors:  | Formset errors: []
