@@ -9,21 +9,64 @@ import re
 
 
 class UserProfileForm(forms.ModelForm):
-    """Form for user profile information"""
-    first_name = forms.CharField(max_length=150, required=True)
-    last_name = forms.CharField(max_length=150, required=True)
-    email = forms.EmailField(required=True)
-
+    """Form for user profile information with enhanced error messages"""
+    first_name = forms.CharField(
+        max_length=150, 
+        required=True,
+        error_messages={
+            'required': 'Please enter your first name.',
+            'max_length': 'First name cannot exceed 150 characters.'
+        }
+    )
+    last_name = forms.CharField(
+        max_length=150, 
+        required=True,
+        error_messages={
+            'required': 'Please enter your last name.',
+            'max_length': 'Last name cannot exceed 150 characters.'
+        }
+    )
+    email = forms.EmailField(
+        required=True,
+        error_messages={
+            'required': 'Please provide a valid email address.',
+            'invalid': 'Please enter a valid email format (e.g., name@example.com).'
+        }
+    )
     class Meta:
         model = UserProfile
         fields = ['phone_number', 'id_number', 'date_of_birth', 'county', 
                   'sub_county', 'ward', 'village', 'location', 'sub_location']
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
-            'phone_number': forms.TextInput(attrs={'placeholder': '+254712345678'}),
-            'id_number': forms.TextInput(attrs={'placeholder': 'National ID Number'}),
+            'date_of_birth': forms.DateInput(attrs={
+                'type': 'date',
+                'max': date.today().isoformat()
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'placeholder': '+254712345678',
+                'pattern': r'^\+?254[17]\d{8}$',
+                'title': 'Enter a valid Kenyan phone number starting with +254 or 0'
+            }),
+            'id_number': forms.TextInput(attrs={
+                'placeholder': 'National ID Number',
+                'pattern': r'\d{7,9}',
+                'title': 'Enter your 7-9 digit ID number'
+            }),
         }
-
+        error_messages = {
+            'phone_number': {
+                'required': 'Phone number is required for contact purposes.',
+                'invalid': 'Please enter a valid phone number format.'
+            },
+            'id_number': {
+                'required': 'National ID/Birth Certificate number is required.',
+                'unique': 'This ID number is already registered in our system.'
+            },
+            'date_of_birth': {
+                'required': 'Date of birth is required.',
+                'invalid': 'Please enter a valid date.'
+            }
+        }
     def clean_email(self):
         """Validate email is not already in use - optimized with caching"""
         email = self.cleaned_data.get('email')
@@ -43,7 +86,10 @@ class UserProfileForm(forms.ModelForm):
             cache.set(cache_key, exists, 300)  # Cache for 5 minutes
         
         if exists:
-            raise ValidationError("This email address is already registered.")
+            raise ValidationError(
+                "This email address is already registered. Please use a different email or contact support if this is your email.",
+                code='duplicate_email'
+            )
         return email
 
     def clean_id_number(self):
@@ -57,10 +103,10 @@ class UserProfileForm(forms.ModelForm):
         
         # Validate format
         if len(id_number) < 7 or len(id_number) > 9:
-            raise ValidationError("ID number must be between 7 and 9 digits.")
+            raise ValidationError("ID number must be between 7 and 9 digits. You entered: %(length)d digits.", params={'length': len(id_number)},code='invalid_length')
         
         if not id_number.isdigit():
-            raise ValidationError("ID number must contain only digits.")
+            raise ValidationError("ID number must contain only digits(0-9).",code='invalid_format')
         
         # Check uniqueness with caching
         cache_key = f'id_exists_{id_number}'
@@ -101,9 +147,14 @@ class UserProfileForm(forms.ModelForm):
                 raise ValidationError("Phone number must start with +254, 0, or be a valid format.")
         
         # Validate length
-        if len(phone) < 12 or len(phone) > 15:
-            raise ValidationError("Invalid phone number length.")
-        
+        if len(phone) < 12 or len(phone) > 13:
+            raise ValidationError("Invalid phone number length.number must be 10 digits long.",code='invalid_length')
+        # Validate Kenyan mobile prefixes (Safaricom, Airtel, Telkom)
+        if not re.match(r'^\+254[17]\d{8}$', phone):
+            raise ValidationError(
+                "Please enter a valid Kenyan mobile number (Safaricom, Airtel, or Telkom).",
+                code='invalid_prefix'
+            )
         return phone
 
     def clean_date_of_birth(self):
@@ -349,6 +400,14 @@ class DocumentUploadForm(forms.ModelForm):
         widgets = {
             'description': forms.TextInput(attrs={'placeholder': 'Brief description of the document'}),
         }
+        error_messages = {
+            'document_type': {
+                'required': 'Please select the document type.'
+            },
+            'file': {
+                'required': 'Please upload a file.'
+            }
+        }
 
     file = forms.FileField(
         validators=[
@@ -358,7 +417,11 @@ class DocumentUploadForm(forms.ModelForm):
             )
         ],
         help_text='Allowed formats: PDF, JPG, PNG, DOC, DOCX (Max size: 5MB)',
-        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx'})
+        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx'}),
+        error_messages={
+            'required': 'Please select a file to upload.',
+            'invalid': 'The uploaded file is invalid.'
+        }
     )
 
     def clean_file(self):
@@ -387,5 +450,9 @@ DocumentFormSet = forms.inlineformset_factory(
     can_delete=True,
     validate_max=True,
     min_num=0,
-    validate_min=False
+    validate_min=False,
+    error_messages={
+        'too_many_forms': 'You can upload a maximum of 10 documents.',
+        'too_few_forms': 'Please upload at least the required documents.'
+    }
 )
