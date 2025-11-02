@@ -5,11 +5,17 @@ from .views import (
     BursaryUpdateView,
     ApplicationListView,
 )
+from . import views
 from django.views.generic import TemplateView
 
 urlpatterns = [
     path('', ApplicationListView.as_view(), name='application_list'),
     # The 'bursary_apply' path now points to the function-based view
+    # 1. Success Page (for successful form submission)
+    path('apply/success/', views.application_success, name='application_success'),
+    
+    # 2. Status Page (for preventing multiple submissions)
+    path('status/', views.application_status, name='application_status'),
     path('apply/', bursary_apply, name='bursary_apply'), 
     path('<int:pk>/', BursaryDetailView.as_view(), name='bursary_detail'),
     path('<int:pk>/edit/', BursaryUpdateView.as_view(), name='bursary_update'),

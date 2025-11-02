@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.db.models import Index
+from django.db.models import Index,UniqueConstraint
 
 
 class UserProfile(models.Model):
@@ -267,6 +267,10 @@ class BursaryApplication(models.Model):
             ("approve_application", "Can approve bursary applications"),
             ("reject_application", "Can reject bursary applications"),
             ("view_analytics", "Can view application analytics"),
+        ]
+        # Enforce that only one application can exist per user_profile
+        constraints = [
+            UniqueConstraint(fields=['user_profile'], name='unique_application_per_user')
         ]
 
 

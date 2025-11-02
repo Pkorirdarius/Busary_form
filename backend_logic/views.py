@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db.models import Prefetch
@@ -37,6 +37,11 @@ def bursary_apply(request):
     Optimized function-based view for multi-step bursary application form.
     Uses caching and efficient database queries to handle scale.
     """
+    user = request.user
+    if user.is_authenticated and BursaryApplication.objects.filter(user_profile__user=user).exists():
+        # Redirect to a status page or an 'already submitted' message
+        # You may need to define this URL in urls.py first
+        return redirect('application_status')
     if request.method == 'POST':
         main_form = MultiStepBursaryApplicationForm(request.POST, request.FILES)
         document_formset = DocumentFormSet(request.POST, request.FILES, prefix='document_formset')
@@ -171,7 +176,10 @@ def bursary_apply(request):
                         request,
                         f'Application submitted! Number: {application.application_number}'
                     )
-                    return redirect('bursary_success')
+                    # Set initial status (if not done in save logic)
+                    application.status = 'Submitted'
+                    application.save()
+                    return redirect(reverse('appliction_success'))
 
             except Exception as e:
                 logger.error(f"Bursary application error: {e}", exc_info=True)
@@ -205,7 +213,18 @@ class BursaryDetailView(DetailView):
         ).prefetch_related(
             'documents'
         )
-
+def application_success(request):
+    """
+    Renders a page confirming the application was submitted successfully.
+    """
+    # Ensure you have created the template: 
+    # backend_logic/templates/backend_logic/application_success.html
+    return render(request, 'backend_logic/application_success.html', {})
+def application_status(request):
+    """
+    Renders a status page for users who have already submitted an application.
+    """
+    return render(request, 'backend_logic/application_status.html', {})
 
 class BursaryUpdateView(LoginRequiredMixin, UpdateView):
     """Optimized update view"""

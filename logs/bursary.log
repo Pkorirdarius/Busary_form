@@ -81,3 +81,17 @@ WARNING 2025-10-29 10:52:30,819 views Form validation errors:  | Formset errors:
 WARNING 2025-10-29 10:53:04,817 views Form validation errors:  | Formset errors: []
 WARNING 2025-10-29 12:15:46,105 views Form validation errors:  | Formset errors: []
 WARNING 2025-10-29 12:16:59,076 views Form validation errors:  | Formset errors: []
+WARNING 2025-10-30 11:55:05,314 log Not Found: /favicon.ico
+WARNING 2025-10-30 11:55:05,317 basehttp "GET /favicon.ico HTTP/1.1" 404 16527
+WARNING 2025-10-30 11:55:10,294 log Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2025-10-30 11:55:10,295 basehttp "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16674
+WARNING 2025-10-30 11:59:10,832 log Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2025-10-30 11:59:10,834 basehttp "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16674
+WARNING 2025-10-31 11:22:38,816 log Not Found: /favicon.ico
+WARNING 2025-10-31 11:22:38,816 basehttp "GET /favicon.ico HTTP/1.1" 404 16526
+WARNING 2025-10-31 11:29:29,442 views Form validation errors:  | Formset errors: []
+WARNING 2025-10-31 11:48:47,936 views Form validation errors:  | Formset errors: []
+WARNING 2025-11-01 15:43:11,937 log Not Found: /favicon.ico
+WARNING 2025-11-01 15:43:11,939 basehttp "GET /favicon.ico HTTP/1.1" 404 16526
+WARNING 2025-11-02 16:52:52,748 log Not Found: /favicon.ico
+WARNING 2025-11-02 16:52:52,749 basehttp "GET /favicon.ico HTTP/1.1" 404 16527

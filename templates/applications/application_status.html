@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Application Already Submitted{% endblock %}
+
+{% block content %}
+
+<!-- Load Tailwind CSS classes using style block for local styling -->
+<style>
+  /* Base container style */
+  .status-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Icon styling */
+  .alert-icon {
+    width: 72px;
+    height: 72px;
+    background-color: #fca5a5; /* Red-300 */
+    color: #b91c1c; /* Red-700 */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 36px;
+    border: 4px solid #f87171; /* Red-400 */
+  }
+  .btn-primary {
+    transition: all 0.2s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<div class="status-container">
+
+  <!-- Alert Icon -->
+  <div class="alert-icon">
+    <!-- Inline SVG for a clean "!" icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+  </div>
+
+  <h1 class="text-3xl font-extrabold text-gray-800 mb-4">Application Already Submitted</h1>
+  
+  <p class="text-lg text-gray-600 mb-6 leading-relaxed">
+    Our records show that an application has already been submitted under your user profile. 
+    You are limited to one active bursary application per cycle to ensure fair processing for all applicants.
+  </p>
+
+  <p class="text-md text-gray-700 font-semibold mb-8 border-l-4 border-red-500 pl-3 py-1 bg-red-50 inline-block rounded-md">
+    If you need to view or make changes to your existing application, please use the link below.
+  </p>
+
+  <!-- Action Buttons -->
+  <div class="flex flex-col sm:flex-row justify-center gap-4">
+    <!-- Link to the application list/detail page -->
+    <a href="{% url 'application_list' %}" class="btn-primary bg-blue-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-blue-700 flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      View My Application Status
+    </a>
+    
+    <!-- Link back to the home page or dashboard -->
+    <a href="{% url 'application_list' %}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 shadow-md flex items-center justify-center">
+      Go to Dashboard
+    </a>
+  </div>
+
+  <div class="mt-10 pt-6 border-t border-gray-200 text-left">
+    <h3 class="text-xl font-semibold text-gray-700 mb-2">Need to submit documents?</h3>
+    <p class="text-gray-500 text-sm">
+      If you need to upload additional documents or re-upload a failed document, please do so from your Application Detail/Update page.
+    </p>
+  </div>
+
+</div>
+
+{% endblock content %}
