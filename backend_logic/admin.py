@@ -263,12 +263,67 @@ class EnhancedBursaryApplicationAdmin(admin.ModelAdmin):
         approved = BursaryApplication.objects.filter(status='approved').count()
         rejected = BursaryApplication.objects.filter(status='rejected').count()
         
-        # High priority applications (score >= 60)
-        high_priority = BursaryApplication.objects.annotate(
+        annotated_queryset = BursaryApplication.objects.annotate(
+            # Income factor (0-15 points) - Duplicated from get_queryset
+            income_score=Case(
+                When(annual_family_income__lte=30000, then=15),
+                When(annual_family_income__lte=50000, then=12),
+                When(annual_family_income__lte=100000, then=9),
+                When(annual_family_income__lte=200000, then=6),
+                When(annual_family_income__lte=300000, then=3),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # Sibling factor (0-15 points) - Duplicated from get_queryset
+            sibling_score=Case(
+                When(siblings_in_school__gte=5, then=15),
+                When(siblings_in_school=4, then=12),
+                When(siblings_in_school=3, then=9),
+                When(siblings_in_school=2, then=6),
+                When(siblings_in_school=1, then=3),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # Orphan status (0-20 points) - Duplicated from get_queryset
+            orphan_score=Case(
+                When(is_orphan=True, then=20),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # Single parent (0-10 points) - Duplicated from get_queryset
+            single_parent_score=Case(
+                When(is_single_parent=True, then=10),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # Disability (0-15 points) - Duplicated from get_queryset
+            disability_score=Case(
+                When(has_disability=True, then=15),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # No previous bursary (0-10 points) - Duplicated from get_queryset
+            first_time_score=Case(
+                When(previous_bursary_recipient=False, then=10),
+                default=0,
+                output_field=IntegerField()
+            ),
+            # Fee burden ratio (0-15 points) - Duplicated from get_queryset
+            fee_burden_score=Case(
+                When(tuition_fee__gte=F('annual_family_income') * 2, then=15),
+                When(tuition_fee__gte=F('annual_family_income'), then=12),
+                When(tuition_fee__gte=F('annual_family_income') * 0.5, then=9),
+                When(tuition_fee__gte=F('annual_family_income') * 0.3, then=6),
+                default=3,
+                output_field=IntegerField()
+            ),
+            # Calculate total need score (max 100 points)
             need_score=F('income_score') + F('sibling_score') + F('orphan_score') + 
                        F('single_parent_score') + F('disability_score') + 
                        F('first_time_score') + F('fee_burden_score')
-        ).filter(need_score__gte=60, status='pending').count()
+        )
+        # High priority applications (score >= 60)
+        high_priority = annotated_queryset.filter(need_score__gte=60, status='pending').count()
         
         flagged = BursaryApplication.objects.filter(is_flagged=True).count()
         unverified = BursaryApplication.objects.filter(is_verified=False, status='pending').count()

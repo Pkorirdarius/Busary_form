@@ -72,7 +72,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         alert('Please provide a more detailed reason (at least 10 characters).');
         return false;
     }
-    return confirm(`Are you sure you want to flag ${{'{{ applications.count }}'}} application(s)?`);
+    return confirm(`Are you sure you want to flag {{ applications.count }} application(s)?`);
 });
 </script>
 {% endblock %}
