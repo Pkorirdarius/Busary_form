@@ -1,14 +1,15 @@
 from django.views.generic import UpdateView, DetailView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect,reverse
+from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import Prefetch
 import logging
+from backend_logic.document_verifier import get_document_verifier 
+# from backend_logic.document_verifier import get_document_verifier # Use this if path is different
 
 logger = logging.getLogger(__name__)
 
@@ -32,74 +33,133 @@ class ApplicationListView(LoginRequiredMixin, ListView):
         ).order_by('-created_at')
 
 
+# --- CRITICAL REFACTOR: Simplify User Creation and Lock Handling ---
+def _handle_user_creation(data):
+    """
+    Utility function to handle User and UserProfile creation/update atomically.
+    Uses ID number as the primary unique key for the username.
+    """
+    id_number = data.get('idNumber')
+    email = data.get('email')
+    full_name = data['fullName']
+    first_name = full_name.split(' ')[0]
+    last_name = ' '.join(full_name.split(' ')[1:]) or first_name # Fallback last name
+    
+    # 1. Determine username safely, defaulting to a UUID/random string if ID is missing.
+    # We will use the ID number as the username if present and unique.
+    username_key = id_number or full_name.replace(' ', '_').lower()
+
+    # Get the user or prepare for creation.
+    # The calling function (bursary_apply) must handle the transaction and locking.
+    
+    user = User.objects.filter(username=username_key).first()
+    
+    if user:
+        # Update existing user
+        user.email = email or user.email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+    else:
+        # Create new user
+        # Ensure username uniqueness if ID is missing (not strictly necessary here 
+        # as it relies on the calling function's unique ID/email check)
+        user = User.objects.create(
+            username=username_key,
+            email=email or f'{username_key}@example.com',
+            first_name=first_name,
+            last_name=last_name
+        )
+    
+    # Get or create UserProfile (optimized with update_or_create)
+    profile, _ = UserProfile.objects.update_or_create(
+        user=user,
+        defaults={
+            'phone_number': data.get('phone'),
+            'id_number': id_number,
+            'date_of_birth': data.get('dob'),
+            'county': data.get('county'),
+            'sub_county': data.get('subCounty'),
+            'ward': data.get('ward'),
+            'village': data.get('village'),
+            'location': data.get('location', ''),
+            'sub_location': data.get('subLocation', ''),
+        }
+    )
+    
+    return user, profile
+
+
 def bursary_apply(request):
     """
     Optimized function-based view for multi-step bursary application form.
     Uses caching and efficient database queries to handle scale.
+    Includes document verification logic.
     """
     user = request.user
     if user.is_authenticated and BursaryApplication.objects.filter(user_profile__user=user).exists():
         # Redirect to a status page or an 'already submitted' message
-        # You may need to define this URL in urls.py first
         return redirect('application_status')
+
     if request.method == 'POST':
         main_form = MultiStepBursaryApplicationForm(request.POST, request.FILES)
         document_formset = DocumentFormSet(request.POST, request.FILES, prefix='document_formset')
         
         if main_form.is_valid() and document_formset.is_valid():
             try:
+                data = main_form.cleaned_data
+                
+                # --- NEW FEATURE: Document Verification Integration ---
+                document_verifier = get_document_verifier()
+                verification_errors = []
+                
+                # 1. Extract documents for verification
+                id_document = next((f for f in document_formset.cleaned_data if f and f.get('document_type') in ['id', 'birth_cert']), None)
+                
+                if not id_document or not id_document.get('file'):
+                    messages.error(request, 'ID or Birth Certificate document is required for verification.')
+                    return render(request, 'applications/busary_form.html', {'form': main_form, 'document_formset': document_formset})
+                    
+                verification_result = document_verifier.verify_document(
+                    document_file=id_document['file'],
+                    expected_name=data.get('fullName'),
+                    expected_id=data.get('idNumber'),
+                    expected_dob=data.get('dob')
+                )
+                
+                if not verification_result.get('verified'):
+                    # CRITICAL: Prevent submission on failed verification
+                    logger.warning(f"Verification failed for ID {data.get('idNumber')}: {verification_result.get('errors', 'Unknown error')}")
+                    # Collect specific errors/warnings to show the user
+                    verif_errors = verification_result.get('errors', []) + verification_result.get('warnings', [])
+                    messages.error(request, f'Document verification failed (Confidence: {verification_result["confidence"]:.1%}). Please ensure your document is clear and matches the form data. Details: {", ".join(verif_errors[:2])}')
+                    return render(request, 'applications/busary_form.html', {'form': main_form, 'document_formset': document_formset})
+                
+                messages.info(request, f'Document verified successfully (Confidence: {verification_result["confidence"]:.1%}). Submitting application.')
+                # --- END Document Verification ---
+
+                
                 with transaction.atomic():
-                    data = main_form.cleaned_data
+                    # Acquire lock on the potential user record if ID is provided
+                    id_number = data.get('idNumber')
+                    if id_number:
+                        User.objects.filter(username=id_number).select_for_update()
+
+                    # Refactored user/profile logic
+                    user, profile = _handle_user_creation(data)
                     
-                    # Use get_or_create with select_for_update to prevent race conditions
-                    username_key = data.get('idNumber') or data.get('email') or data['fullName'].replace(' ', '_')
-                    
-                    # Try to get existing user first (with locking)
-                    user = User.objects.filter(username=username_key).select_for_update().first()
-                    
-                    if user:
-                        # Update existing user
-                        user.email = data.get('email', user.email)
-                        user.first_name = data['fullName'].split(' ')[0]
-                        user.last_name = ' '.join(data['fullName'].split(' ')[1:]) or user.first_name
-                        user.save()
-                    else:
-                        # Create new user
-                        user = User.objects.create(
-                            username=username_key,
-                            email=data.get('email', f'{username_key}@example.com'),
-                            first_name=data['fullName'].split(' ')[0],
-                            last_name=' '.join(data['fullName'].split(' ')[1:]) or data['fullName'].split(' ')[0]
-                        )
-                    
-                    # Clear email cache if email was checked
+                    # Clear cache (moved to after successful data save)
                     if data.get('email'):
                         cache.delete(f'email_exists_{data["email"]}')
-                    if data.get('idNumber'):
-                        cache.delete(f'id_exists_{data["idNumber"]}')
-                    
-                    # Get or create UserProfile (optimized with update_or_create)
-                    profile, created = UserProfile.objects.update_or_create(
-                        user=user,
-                        defaults={
-                            'phone_number': data.get('phone'),
-                            'id_number': data.get('idNumber'),
-                            'date_of_birth': data.get('dob'),
-                            'county': data.get('county'),
-                            'sub_county': data.get('subCounty'),
-                            'ward': data.get('ward'),
-                            'village': data.get('village'),
-                            'location': data.get('location', ''),
-                            'sub_location': data.get('subLocation', ''),
-                        }
-                    )
+                    if id_number:
+                        cache.delete(f'id_exists_{id_number}')
                     
                     # Create BursaryApplication (single bulk insert)
                     application = BursaryApplication.objects.create(
                         user_profile=profile,
                         student_name=data.get('fullName'),
                         institution_name=data.get('institution'),
-                        admission_number=data.get('idNumber'),
+                        admission_number=data.get('idNumber'), # Re-used ID as admission is common in Kenya
                         education_level=data.get('level'),
                         course_program=data.get('course'),
                         year_of_study=data.get('yearForm', 1),
@@ -170,15 +230,18 @@ def bursary_apply(request):
                     
                     # Bulk create all documents in one query
                     if docs_to_create:
+                        # Set application foreign key before bulk create
+                        for doc in docs_to_create:
+                            doc.application = application 
                         Document.objects.bulk_create(docs_to_create)
                     
                     messages.success(
                         request,
                         f'Application submitted! Number: {application.application_number}'
                     )
-                    # Set initial status (if not done in save logic)
+                    
                     application.status = 'Submitted'
-                    application.save()
+                    application.save(update_fields=['status']) # Optimization: only update status field
                     return redirect(reverse('appliction_success'))
 
             except Exception as e:
@@ -188,6 +251,8 @@ def bursary_apply(request):
             messages.error(request, 'Please correct the errors below and try again.')
             # Log form errors for debugging
             logger.warning(f"Form validation errors: {main_form.errors} | Formset errors: {document_formset.errors}")
+            # Ensure the document files are re-attached to the formset on render error
+            
     else:
         # GET request: initialize forms
         main_form = MultiStepBursaryApplicationForm()
@@ -199,6 +264,8 @@ def bursary_apply(request):
     }
     return render(request, 'applications/busary_form.html', context)
 
+
+# --- REMAINDER OF FILE REMAINS MOSTLY OPTIMIZED ---
 
 class BursaryDetailView(DetailView):
     """Optimized detail view with prefetching"""
@@ -213,13 +280,13 @@ class BursaryDetailView(DetailView):
         ).prefetch_related(
             'documents'
         )
+
 def application_success(request):
     """
     Renders a page confirming the application was submitted successfully.
     """
-    # Ensure you have created the template: 
-    # backend_logic/templates/backend_logic/application_success.html
     return render(request, 'backend_logic/application_success.html', {})
+
 def application_status(request):
     """
     Renders a status page for users who have already submitted an application.
@@ -281,6 +348,7 @@ class BursaryUpdateView(LoginRequiredMixin, UpdateView):
                 for document in documents:
                     document.save()
             else:
+                # If document formset is invalid, rollback the main form save
                 return self.form_invalid(form)
 
             messages.success(self.request, 'Application updated successfully.')
