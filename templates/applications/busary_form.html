@@ -298,15 +298,15 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ form.term1.label }}</label>
+            <label id="perf1Label">{{ form.term1.label }}</label>
             {{ form.term1 }}
           </div>
           <div class="form-group">
-            <label>{{ form.term2.label }}</label>
+            <label id="perf2Label">{{ form.term2.label }}</label>
             {{ form.term2 }}
           </div>
           <div class="form-group">
-            <label>{{ form.term3.label }}</label>
+            <label id="perf3Label">{{ form.term3.label }}</label>
             {{ form.term3 }}
           </div>
         </div>
@@ -372,7 +372,6 @@
             <small style="color: #666;">Provide detailed explanation (50-1000 characters)</small>
           </div>
         </div>
-        <!-- Navigation buttons -->
         <div class="navigation">
           <button type="button" class="btn btn-secondary" id="backTo1">Back</button>
           <button type="button" class="btn btn-primary" id="toStep3">Next</button>
@@ -387,17 +386,29 @@
         <div class="section-title"><h2>Family Details</h2><p>Parent or guardian information</p></div>
       </div>
       <div class="section-content">
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ form.fatherName.label }}</label>
-            {{ form.fatherName }}
+        <div class="conditional show" id="parentInfoGroup">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ form.fatherName.label }}</label>
+              {{ form.fatherName }}
+            </div>
+            <div class="form-group">
+              <label>{{ form.motherName.label }}</label>
+              {{ form.motherName }}
+            </div>
           </div>
-          <div class="form-group">
-            <label>{{ form.motherName.label }}</label>
-            {{ form.motherName }}
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ form.fatherOccupation.label }}</label>
+              {{ form.fatherOccupation }}
+            </div>
+            <div class="form-group">
+              <label>{{ form.motherOccupation.label }}</label>
+              {{ form.motherOccupation }}
+            </div>
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label class="required">{{ form.guardianName.label }}</label>
@@ -409,17 +420,6 @@
             {% if form.relation.errors %}
               <div class="error-message">{{ form.relation.errors }}</div>
             {% endif %}
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ form.fatherOccupation.label }}</label>
-            {{ form.fatherOccupation }}
-          </div>
-          <div class="form-group">
-            <label>{{ form.motherOccupation.label }}</label>
-            {{ form.motherOccupation }}
           </div>
         </div>
 
@@ -452,34 +452,36 @@
             {% endif %}
           </div>
         </div>
-        <div class="form-row single">
-          <div class="form-group">
-            <label class="required">{{ form.bothParentsAlive.label }}</label>
-            <div class="radio-group" role="radiogroup" aria-label="bothParentsAlive">
-              {% for radio in form.bothParentsAlive %}
-                <label class="radio-item">{{ radio.tag }} {{ radio.choice_label }}</label>
-              {% endfor %}
+
+        <div class="conditional show" id="parentalStatusGroup">
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">{{ form.bothParentsAlive.label }}</label>
+              <div class="radio-group" role="radiogroup" aria-label="bothParentsAlive">
+                {% for radio in form.bothParentsAlive %}
+                  <label class="radio-item">{{ radio.tag }} {{ radio.choice_label }}</label>
+                {% endfor %}
+              </div>
+              {% if form.bothParentsAlive.errors %}
+                <div class="error-message">{{ form.bothParentsAlive.errors }}</div>
+              {% endif %}
             </div>
-            {% if form.bothParentsAlive.errors %}
-              <div class="error-message">{{ form.bothParentsAlive.errors }}</div>
-            {% endif %}
+          </div>
+
+          <div class="form-row single">
+            <div class="form-group">
+              <label class="required">{{ form.singleParent.label }}</label>
+              <div class="radio-group" role="radiogroup" aria-label="singleParent">
+                {% for radio in form.singleParent %}
+                  <label class="radio-item">{{ radio.tag }} {{ radio.choice_label }}</label>
+                {% endfor %}
+              </div>
+              {% if form.singleParent.errors %}
+                <div class="error-message">{{ form.singleParent.errors }}</div>
+              {% endif %}
+            </div>
           </div>
         </div>
-
-        <div class="form-row single">
-          <div class="form-group">
-            <label class="required">{{ form.singleParent.label }}</label>
-            <div class="radio-group" role="radiogroup" aria-label="singleParent">
-              {% for radio in form.singleParent %}
-                <label class="radio-item">{{ radio.tag }} {{ radio.choice_label }}</label>
-              {% endfor %}
-            </div>
-            {% if form.singleParent.errors %}
-              <div class="error-message">{{ form.singleParent.errors }}</div>
-            {% endif %}
-          </div>
-        </div>
-
         <div class="conditional" id="providerNote">
           <div class="form-row single">
             <div class="form-group">
@@ -748,7 +750,7 @@
     </div>
   </form>
 </div>
-<!--Include Chatbot --> 
+
 {% include 'components/chatbot.html' %}
 
 <script src="{% static 'chatbot.js' %}"></script>

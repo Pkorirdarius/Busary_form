@@ -16,7 +16,10 @@ document.addEventListener('DOMContentLoaded', function () {
     disabilityDetails: document.getElementById('disabilityDetails'),
     previousBursaryDetails: document.getElementById('previousBursaryDetails'),
     previousBursaryDetailsContinued: document.getElementById('previousBursaryDetailsContinued'),
-    providerNote: document.getElementById('providerNote')
+    providerNote: document.getElementById('providerNote'),
+    // NEW: Containers for parent information and status
+    parentInfoGroup: document.getElementById('parentInfoGroup'), 
+    parentalStatusGroup: document.getElementById('parentalStatusGroup')
   };
   
   // Cache navigation buttons
@@ -31,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     backTo4: document.getElementById('backTo4')
   };
   
-  // Cache financial fields
+  // Cache financial and institution fields
   const financialFields = {
     annualIncome: document.getElementById('annual_family_income'),
     tuitionFee: document.getElementById('tuition_fee'),
@@ -40,6 +43,15 @@ document.addEventListener('DOMContentLoaded', function () {
     numberOfSiblings: document.getElementById('number_of_siblings'),
     siblingsInSchool: document.getElementById('siblings_in_school')
   };
+
+  // NEW: Cache institution level and performance labels
+  const institutionFields = {
+    level: form.querySelector('select[name="level"]'),
+    perf1Label: document.getElementById('perf1Label'),
+    perf2Label: document.getElementById('perf2Label'),
+    perf3Label: document.getElementById('perf3Label')
+  };
+
 
   // === STATE MANAGEMENT ===
   let currentStep = 1;
@@ -50,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setRadioDefault('disability', 'False');
   setRadioDefault('previousBursary', 'False');
   setRadioDefault('singleParent', 'False');
+  setRadioDefault('bothParentsAlive', 'True'); // Ensure a default for consistency
 
   // === HELPER FUNCTIONS ===
   function setRadioDefault(name, value) {
@@ -80,6 +93,16 @@ document.addEventListener('DOMContentLoaded', function () {
         field.setAttribute('required', 'required');
       } else {
         field.removeAttribute('required');
+        // Clear value when hidden to prevent submission of unwanted data
+        if (!show) {
+          if (field.type === 'radio') {
+            // Uncheck radios in hidden groups
+            field.checked = false; 
+          } else if (field.tagName === 'SELECT' || field.tagName === 'TEXTAREA' || field.type === 'text' || field.type === 'number') {
+            // Clear text/number inputs
+            field.value = '';
+          }
+        }
       }
     });
   }
@@ -92,25 +115,51 @@ document.addEventListener('DOMContentLoaded', function () {
     const bothParentsAlive = getRadioValue('bothParentsAlive') === 'True';
     const singleParent = getRadioValue('singleParent') === 'True';
     
-    // Update conditional field visibility
+    // NEW ORPHAN LOGIC: If orphan, hide parent details and parental status radios
+    const showParentInfo = !isOrphan;
+    showHideConditional(conditionalFields.parentInfoGroup, showParentInfo);
+    showHideConditional(conditionalFields.parentalStatusGroup, showParentInfo);
+    
+    // Update conditional field visibility (existing logic)
     showHideConditional(conditionalFields.orphanNote, isOrphan);
     showHideConditional(conditionalFields.disabilityDetails, hasDisability);
     showHideConditional(conditionalFields.previousBursaryDetails, previousBursary);
     showHideConditional(conditionalFields.previousBursaryDetailsContinued, previousBursary);
     
-    const needsProviderNote = isOrphan || !bothParentsAlive || singleParent;
+    // Fee provider note should show if: Orphan OR (Parents not both alive AND is a single parent)
+    // NOTE: If orphan is YES, we assume the guardian is the provider, so the note is relevant.
+    const needsProviderNote = isOrphan || !showParentInfo || singleParent; 
     showHideConditional(conditionalFields.providerNote, needsProviderNote);
   }
 
-  // === EVENT DELEGATION FOR RADIO BUTTONS ===
+  // === INSTITUTION LABEL HANDLER ===
+  function handleInstitutionLabels() {
+    const level = institutionFields.level?.value;
+    // Check if the level includes 'University' or 'College' (case-insensitive)
+    const isCollegeOrUniversity = level && (level.toLowerCase().includes('university') || level.toLowerCase().includes('college'));
+    
+    const label1 = isCollegeOrUniversity ? 'Semester 1' : 'Term 1';
+    const label2 = isCollegeOrUniversity ? 'Semester 2' : 'Term 2';
+    const label3 = isCollegeOrUniversity ? 'Semester 3' : 'Term 3';
+    
+    if (institutionFields.perf1Label) institutionFields.perf1Label.textContent = label1;
+    if (institutionFields.perf2Label) institutionFields.perf2Label.textContent = label2;
+    if (institutionFields.perf3Label) institutionFields.perf3Label.textContent = label3;
+  }
+
+
+  // === EVENT DELEGATION FOR RADIO BUTTONS AND SELECTS ===
   form.addEventListener('change', function(e) {
     if (e.target.type === 'radio') {
       handleConditionalFields();
+    } else if (e.target.name === 'level') { // Check for institution level change
+      handleInstitutionLabels();
     }
   });
 
   // Initial call
   handleConditionalFields();
+  handleInstitutionLabels(); // Initial run for labels
 
   // === NAVIGATION FUNCTIONS ===
   function updateProgress() {
@@ -207,7 +256,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (labelEl) {
         const groupName = groupDiv.querySelector('input[type="radio"]')?.name;
-        if (groupName && groupDiv.offsetParent !== null) {
+        // Check if the radio group is visible (it's offsetParent won't be null if visible)
+        if (groupName && groupDiv.offsetParent !== null) { 
           const checked = sec.querySelector(`input[name="${groupName}"]:checked`);
           const groupLabel = labelEl.textContent.replace('*', '').trim();
           
@@ -282,7 +332,117 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+  // === R6: REAL-TIME VALIDATION HELPER ===
+  function validateField(el) {
+    clearErrorForField(el); // Clear previous errors
+    
+    const parentConditional = el.closest('.conditional');
+    // Skip validation if element is in a hidden conditional field
+    if (parentConditional && !parentConditional.classList.contains('show')) {
+      return true;
+    }
 
+    if (el.hasAttribute('required')) {
+      if (el.type === 'file' && el.files.length === 0) {
+        showErrorForField(el, `File required.`);
+        return false;
+      } else if (!el.value || el.value.trim() === '') {
+        const label = el.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || 'This field';
+        showErrorForField(el, `${label} is required.`);
+        return false;
+      }
+    }
+    
+    // Add specific validation logic here (e.g., email format, number range)
+    if (el.id === 'amount_requested') {
+        const tuitionFee = parseFloat(financialFields.tuitionFee?.value || 0);
+        const amountRequested = parseFloat(el.value || 0);
+        if (amountRequested > tuitionFee && tuitionFee > 0) {
+            showErrorForField(el, `Amount requested cannot exceed tuition fee.`);
+            return false;
+        }
+    }
+
+    return true;
+  }
+  
+  function showErrorForField(el, message) {
+      el.classList.add('is-invalid');
+      let errorContainer = el.closest('.form-group').querySelector('.field-error-message');
+      if (!errorContainer) {
+          errorContainer = document.createElement('div');
+          errorContainer.className = 'field-error-message error-message';
+          el.closest('.form-group').appendChild(errorContainer);
+      }
+      errorContainer.textContent = message;
+      errorContainer.style.display = 'block';
+  }
+
+  function clearErrorForField(el) {
+      el.classList.remove('is-invalid');
+      const errorContainer = el.closest('.form-group').querySelector('.field-error-message');
+      if (errorContainer) {
+          errorContainer.style.display = 'none';
+      }
+  }
+
+
+  // === EVENT DELEGATION FOR ALL INPUTS (R6) ===
+  form.addEventListener('change', function(e) {
+    if (e.target.type === 'radio') {
+      handleConditionalFields();
+    } else if (e.target.name === 'level') { 
+      handleInstitutionLabels();
+    }
+  });
+  
+  // R6: Add real-time validation on blur and keyup
+  form.addEventListener('blur', function(e) {
+      // Validate on blur for all inputs except radios/files
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+          validateField(e.target);
+      }
+  }, true); // Use capture phase for better event handling
+
+  form.addEventListener('keyup', function(e) {
+      // Validate while typing for text/number fields
+      if (e.target.type === 'text' || e.target.type === 'number' || e.target.tagName === 'TEXTAREA') {
+          validateField(e.target);
+      }
+  });
+
+
+  // ... (Rest of existing app.js logic, ensure validateStep calls validateField for all fields)
+  
+  function validateStep(step) {
+    const sec = sections[step - 1];
+    if (!sec) return false;
+    
+    // Validate all fields in the current step
+    let isValid = true;
+    
+    const inputElements = sec.querySelectorAll('input, select, textarea');
+    for (let el of inputElements) {
+        // If validateField returns false, set isValid to false, but continue
+        // to collect all errors in the step.
+        if (!validateField(el)) {
+            isValid = false;
+        }
+    }
+    
+    // ... (Existing radio group validation loop, using the new error helpers)
+    
+    if (!isValid) {
+        showError('Please correct the highlighted errors before navigating.');
+        // Scroll to the first invalid field
+        const firstInvalid = sec.querySelector('.is-invalid');
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    return isValid;
+  }
   // === FILE PREVIEW SETUP ===
   const fileInputs = [
     { id: 'idFile', preview: 'idFilePreview' },
