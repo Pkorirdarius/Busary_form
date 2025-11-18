@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from celery.schedules import crontab
+import pyclamd
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -284,6 +285,19 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# Initialize ClamAV client if available; do not scan files here in settings because
+# file contents are not available — scanning should be performed in the upload handler.
+try:
+    cd = pyclamd.ClamdUnixSocket()
+    cd.ping()
+except Exception:
+    try:
+        cd = pyclamd.ClamdNetworkSocket()
+        cd.ping()
+    except Exception:
+        cd = None
+
+CLAMD_AVAILABLE = cd is not None
 # Document Verification Settings
 DOCUMENT_VERIFICATION_ENABLED = True
 VERIFICATION_CONFIDENCE_THRESHOLD = 0.70
